@@ -14,9 +14,18 @@ CREATE INDEX idx_logs_table_action ON logs(table_name, action);
 CREATE INDEX idx_logs_record ON logs(record_id);
 CREATE INDEX idx_logs_created ON logs(created_at DESC);
 
--- Revoke UPDATE and DELETE on logs for all roles
-REVOKE UPDATE, DELETE ON logs FROM PUBLIC;
-REVOKE UPDATE, DELETE ON logs FROM marketplace_user;
+-- Prevent UPDATE/DELETE on logs via trigger (REVOKE doesn't apply to table owner)
+CREATE OR REPLACE FUNCTION prevent_logs_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'logs table is immutable: updates and deletes are not allowed';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_logs_immutable ON logs;
+CREATE TRIGGER trg_logs_immutable
+BEFORE UPDATE OR DELETE ON logs
+FOR EACH ROW EXECUTE FUNCTION prevent_logs_modification();
 
 -- ============================================================
 -- TRIGGER FUNCTION: inserts a row into logs

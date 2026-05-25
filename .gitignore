@@ -29,3 +29,5 @@ web/.cache/
 
 # Docker
 postgres_data/
+
+PROJECT_DESCRIPTION.md
