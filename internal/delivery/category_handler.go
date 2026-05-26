@@ -105,7 +105,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 }
 
 func (h *ProductHandler) GetByID(c *gin.Context) {
-	p, err := h.uc.GetByID(c.Request.Context(), c.Param("id"))
+	p, err := h.uc.GetByID(c.Request.Context(), c.Param("productId"))
 	if err != nil {
 		response.Error(c, http.StatusNotFound, "product not found")
 		return
@@ -128,7 +128,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	p.ID = c.Param("id")
+	p.ID = c.Param("productId")
 	if err := h.uc.Update(c.Request.Context(), &p); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
@@ -168,7 +168,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 }
 
 func (h *ProductHandler) Delete(c *gin.Context) {
-	if err := h.uc.Delete(c.Request.Context(), c.Param("id")); err != nil {
+	if err := h.uc.Delete(c.Request.Context(), c.Param("productId")); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -187,12 +187,14 @@ func NewReviewHandler(uc *usecase.ReviewUseCase) *ReviewHandler {
 
 func (h *ReviewHandler) Create(c *gin.Context) {
 	userID := middleware.GetUserID(c)
+	productID := c.Param("productId")
 	var review domain.Review
 	if err := c.ShouldBindJSON(&review); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	review.UserID = userID
+	review.ProductID = productID
 	if err := h.uc.Create(c.Request.Context(), &review); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return

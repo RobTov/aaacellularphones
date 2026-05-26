@@ -2,6 +2,8 @@ package domain
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type ProductStatus string
@@ -21,11 +23,11 @@ type Product struct {
 	ComparePrice *float64     `json:"compare_price,omitempty" db:"compare_price"`
 	Stock       int           `json:"stock" db:"stock"`
 	Status      ProductStatus `json:"status" db:"status"`
-	Images      []string      `json:"images" db:"images"`
+	Images      pq.StringArray `json:"images" db:"images"`
 	CategoryID  string        `json:"category_id" db:"category_id"`
 	IsActive    bool          `json:"is_active" db:"is_active"`
 	CreatedAt   time.Time     `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at" db:"updated_at"`
 
-	CategoryName string `json:"category_name,omitempty" db:"-"`
+	CategoryName string `json:"category_name,omitempty" db:"category_name"`
 }

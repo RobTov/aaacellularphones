@@ -277,8 +277,8 @@ func (r *reviewRepo) GetByProductID(ctx context.Context, productID string, page,
 	offset := (page - 1) * limit
 	var reviews []domain.Review
 	err = r.db.SelectContext(ctx, &reviews,
-		`SELECT r.*, u.first_name, u.last_name 
-		 FROM reviews r LEFT JOIN users u ON r.user_id = u.id
+		`SELECT r.*
+		 FROM reviews r
 		 WHERE r.product_id = $1 AND r.is_approved = true 
 		 ORDER BY r.created_at DESC OFFSET $2 LIMIT $3`,
 		productID, offset, limit)

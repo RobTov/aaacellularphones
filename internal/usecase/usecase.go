@@ -358,8 +358,8 @@ func (uc *OrderUseCase) Create(ctx context.Context, userID string, input CreateO
 		UserID:          userID,
 		Status:          domain.OrderPending,
 		TotalAmount:     totalAmount,
-		ShippingAddress: input.ShippingAddress,
-		BillingAddress:  input.BillingAddress,
+		ShippingAddress: domain.JSONB(input.ShippingAddress),
+		BillingAddress:  domain.JSONB(input.BillingAddress),
 	}
 
 	order.Items = items

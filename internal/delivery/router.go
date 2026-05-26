@@ -68,7 +68,7 @@ func SetupRoutes(r *gin.Engine, h *Handler, authMW *middleware.AuthMiddleware, o
 		products := api.Group("/products")
 		{
 			products.GET("", h.Product.List)
-			products.GET("/:id", h.Product.GetByID)
+			products.GET("/:productId", h.Product.GetByID)
 			products.GET("/slug/:slug", h.Product.GetBySlug)
 		}
 

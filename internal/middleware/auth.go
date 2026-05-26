@@ -2,12 +2,15 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/aaacellularphones/backend/pkg/jwt"
 	"github.com/gin-gonic/gin"
 )
+
+var ErrMissingAuthHeader = errors.New("missing or invalid authorization header")
 
 type ctxKey string
 
@@ -97,12 +100,12 @@ func (m *AuthMiddleware) Optional() gin.HandlerFunc {
 func extractToken(c *gin.Context) (string, error) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		return "", http.ErrNoLocation
+		return "", ErrMissingAuthHeader
 	}
 
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-		return "", http.ErrNoLocation
+		return "", ErrMissingAuthHeader
 	}
 
 	return parts[1], nil
