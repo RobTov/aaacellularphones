@@ -40,7 +40,9 @@ func NewHandler(
 }
 
 func SetupRoutes(r *gin.Engine, h *Handler, authMW *middleware.AuthMiddleware, origins string) {
-	r.Use(middleware.CORS(origins))
+		r.Use(middleware.CORS(origins))
+
+	r.Static("/uploads", "./uploads")
 
 	api := r.Group("/api/v1")
 	{
@@ -112,6 +114,7 @@ func SetupRoutes(r *gin.Engine, h *Handler, authMW *middleware.AuthMiddleware, o
 			admin.POST("/products", h.Product.Create)
 			admin.PUT("/products/:id", h.Product.Update)
 			admin.DELETE("/products/:id", h.Product.Delete)
+			admin.POST("/upload", h.Product.Upload)
 
 			admin.GET("/orders", h.Order.ListAll)
 			admin.PUT("/orders/:id/status", h.Order.UpdateStatus)

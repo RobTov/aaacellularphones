@@ -1,8 +1,14 @@
 package delivery
 
 import (
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/aaacellularphones/backend/internal/domain"
 	"github.com/aaacellularphones/backend/internal/middleware"
@@ -173,6 +179,67 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		return
 	}
 	response.JSON(c, http.StatusOK, gin.H{"message": "product deleted"})
+}
+
+func (h *ProductHandler) Upload(c *gin.Context) {
+	uploadDir := "uploads"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		response.Error(c, http.StatusInternalServerError, "failed to create upload directory")
+		return
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid multipart form")
+		return
+	}
+
+	files := form.File["files"]
+	if len(files) == 0 {
+		response.Error(c, http.StatusBadRequest, "no files provided")
+		return
+	}
+
+	var urls []string
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
+
+	for _, file := range files {
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		if !allowedExts[ext] {
+			response.Error(c, http.StatusBadRequest, fmt.Sprintf("unsupported file type: %s", ext))
+			return
+		}
+		if file.Size > 10<<20 {
+			response.Error(c, http.StatusBadRequest, fmt.Sprintf("file too large: %s", file.Filename))
+			return
+		}
+
+		filename := fmt.Sprintf("%d_%s%s", time.Now().UnixNano(), strings.TrimSuffix(file.Filename, ext), ext)
+		dst := filepath.Join(uploadDir, filename)
+
+		src, err := file.Open()
+		if err != nil {
+			response.Error(c, http.StatusInternalServerError, "failed to open file")
+			return
+		}
+		defer src.Close()
+
+		out, err := os.Create(dst)
+		if err != nil {
+			response.Error(c, http.StatusInternalServerError, "failed to save file")
+			return
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, src); err != nil {
+			response.Error(c, http.StatusInternalServerError, "failed to write file")
+			return
+		}
+
+		urls = append(urls, "/uploads/"+filename)
+	}
+
+	response.JSON(c, http.StatusCreated, urls)
 }
 
 // ---------- Review Handler ----------

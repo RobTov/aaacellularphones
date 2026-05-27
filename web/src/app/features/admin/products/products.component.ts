@@ -1,9 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../../core/services/api.service';
-import { Product } from '../../../shared/models/product.model';
+import { Product, ProductSpecification } from '../../../shared/models/product.model';
 import { Category } from '../../../shared/models/category.model';
 import { ToastService } from '../../../core/services/toast.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-products',
@@ -118,16 +120,51 @@ import { ToastService } from '../../../core/services/toast.service';
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Images (JSON array)</label>
-              <input type="text" formControlName="images" placeholder='["url1","url2"]'
-                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-400">
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Images</label>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <div *ngFor="let url of imageUrls; let i = index" class="relative group">
+                  <img [src]="url" class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                  <button type="button" (click)="removeImage(i)"
+                          class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs">
+                    &times;
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <app-icon name="plus" size="16px"></app-icon>
+                  Upload Images
+                  <input type="file" accept="image/*" multiple (change)="uploadFiles($event)" class="hidden">
+                </label>
+                <span *ngIf="uploading" class="text-sm text-gray-500">Uploading...</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Specifications</label>
+              <div formArrayName="specifications" class="space-y-2">
+                <div *ngFor="let spec of specifications.controls; let i = index" [formGroupName]="i" class="flex gap-2 items-start">
+                  <input type="text" formControlName="name" placeholder="Name (e.g. Model)"
+                         class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-400">
+                  <input type="text" formControlName="value" placeholder="Value (e.g. Thinkpad)"
+                         class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-400">
+                  <button type="button" (click)="removeSpec(i)"
+                          class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                    <app-icon name="delete" size="16px"></app-icon>
+                  </button>
+                </div>
+              </div>
+              <button type="button" (click)="addSpec()"
+                      class="mt-2 inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                <app-icon name="plus" size="14px"></app-icon>
+                Add Specification
+              </button>
             </div>
             <div class="flex justify-end gap-3 pt-2">
               <button type="button" (click)="showForm = false"
                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
-              <button type="submit" [disabled]="form.invalid"
+              <button type="submit" [disabled]="form.invalid || uploading"
                       class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors">
                 {{ editing ? 'Update' : 'Create' }}
               </button>
@@ -146,9 +183,12 @@ export class AdminProductsComponent implements OnInit {
   showForm = false;
   editing: Product | null = null;
   form: FormGroup;
+  imageUrls: string[] = [];
+  uploading = false;
 
   constructor(
     private api: ApiService,
+    private http: HttpClient,
     private fb: FormBuilder,
     private toast: ToastService,
     private cdr: ChangeDetectorRef,
@@ -161,8 +201,29 @@ export class AdminProductsComponent implements OnInit {
       compare_price: [null],
       stock: [0, [Validators.required, Validators.min(0)]],
       category_id: ['', Validators.required],
-      images: [''],
+      specifications: this.fb.array([]),
     });
+  }
+
+  get specifications(): FormArray {
+    return this.form.get('specifications') as FormArray;
+  }
+
+  private buildSpecGroup(spec?: ProductSpecification): FormGroup {
+    return this.fb.group({
+      name: [spec?.name || ''],
+      value: [spec?.value || ''],
+    });
+  }
+
+  addSpec(spec?: ProductSpecification): void {
+    this.specifications.push(this.buildSpecGroup(spec));
+    this.cdr.detectChanges();
+  }
+
+  removeSpec(index: number): void {
+    this.specifications.removeAt(index);
+    this.cdr.detectChanges();
   }
 
   ngOnInit(): void {
@@ -188,20 +249,64 @@ export class AdminProductsComponent implements OnInit {
 
   openForm(p?: Product): void {
     this.editing = p || null;
+    this.specifications.clear();
+    this.imageUrls = p?.images ? [...p.images] : [];
     if (p) {
       this.form.patchValue({
-        ...p,
-        images: JSON.stringify(p.images || []),
+        name: p.name,
+        slug: p.slug,
+        description: p.description,
+        price: p.price,
+        compare_price: p.compare_price,
+        stock: p.stock,
+        category_id: p.category_id,
       });
+      (p.specifications || []).forEach(spec => this.addSpec(spec));
     } else {
-      this.form.reset({ price: 0, stock: 0, images: '[]' });
+      this.form.reset({ price: 0, stock: 0 });
     }
     this.showForm = true;
   }
 
+  uploadFiles(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    this.uploading = true;
+    const formData = new FormData();
+    for (let i = 0; i < input.files.length; i++) {
+      formData.append('files', input.files[i]);
+    }
+
+    this.http.post<{ success: boolean; data: string[] }>(
+      environment.apiUrl + '/admin/upload', formData
+    ).subscribe({
+      next: r => {
+        this.imageUrls.push(...(r.data || r as any));
+        this.uploading = false;
+        input.value = '';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.uploading = false;
+        this.toast.error('Failed to upload images.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  removeImage(index: number): void {
+    this.imageUrls.splice(index, 1);
+    this.cdr.detectChanges();
+  }
+
   save(): void {
     const val = this.form.value;
-    const body = { ...val, images: this.parseImages(val.images) };
+    const body = {
+      ...val,
+      images: this.imageUrls,
+      specifications: (val.specifications || []).filter((s: any) => s.name || s.value),
+    };
     const obs = this.editing
       ? this.api.put('/admin/products/' + this.editing.id, body)
       : this.api.post('/admin/products', body);
@@ -222,9 +327,5 @@ export class AdminProductsComponent implements OnInit {
         this.cdr.detectChanges();
       });
     }
-  }
-
-  private parseImages(v: string): string[] {
-    try { return JSON.parse(v); } catch { return [v]; }
   }
 }

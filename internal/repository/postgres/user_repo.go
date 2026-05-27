@@ -162,8 +162,8 @@ func NewProductRepository(db *sqlx.DB) domain.ProductRepository {
 
 func (r *productRepo) Create(ctx context.Context, p *domain.Product) error {
 	p.IsActive = true
-	query := `INSERT INTO products (name, slug, description, price, compare_price, stock, images, category_id)
-	          VALUES (:name, :slug, :description, :price, :compare_price, :stock, :images, :category_id)
+	query := `INSERT INTO products (name, slug, description, price, compare_price, stock, images, category_id, specifications)
+	          VALUES (:name, :slug, :description, :price, :compare_price, :stock, :images, :category_id, :specifications)
 	          RETURNING id, created_at, updated_at`
 	rows, err := r.db.NamedQueryContext(ctx, query, p)
 	if err != nil {
@@ -202,6 +202,7 @@ func (r *productRepo) Update(ctx context.Context, p *domain.Product) error {
 	          name = :name, slug = :slug, description = :description,
 	          price = :price, compare_price = :compare_price, stock = :stock,
 	          images = :images, category_id = :category_id, is_active = :is_active,
+	          specifications = :specifications,
 	          updated_at = NOW()
 	          WHERE id = :id`
 	_, err := r.db.NamedExecContext(ctx, query, p)

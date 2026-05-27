@@ -1,3 +1,8 @@
+export interface ProductSpecification {
+  name: string;
+  value: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export interface Product {
   stock: number;
   status: 'active' | 'out_of_stock' | 'discontinued';
   images: string[];
+  specifications: ProductSpecification[];
   category_id: string;
   is_active: boolean;
   created_at: string;

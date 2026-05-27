@@ -1,25 +1,33 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   standalone: true,
   selector: 'app-icon',
   template: `
-    <span [innerHTML]="svg" class="icon inline-flex items-center justify-center"
-          [style.width]="size" [style.height]="size" [style.color]="color">
+    <span [innerHTML]="safeSvg" class="icon"
+          [class]="'inline-flex items-center justify-center'"
+          [style.width]="size" [style.height]="size">
     </span>
   `,
   styles: [`
     .icon { display: inline-flex; align-items: center; justify-content: center; }
-    .icon ::ng-deep svg { width: 100%; height: 100%; }
+    .icon svg { width: 100%; height: 100%; }
   `],
 })
-export class IconComponent {
+export class IconComponent implements OnInit {
   @Input() name: string = '';
   @Input() size: string = '20px';
   @Input() color: string = 'currentColor';
+  safeSvg: SafeHtml = '';
 
-  get svg(): string {
-    return icons[this.name] || icons['help'];
+  constructor(private sanitizer: DomSanitizer) {}
+
+  ngOnInit(): void {
+    const raw = icons[this.name] || icons['help'];
+    const sizeNum = parseInt(this.size, 10) || 20;
+    const svgWithSize = raw.replace('<svg', `<svg width="${sizeNum}" height="${sizeNum}" style="color:${this.color}"`);
+    this.safeSvg = this.sanitizer.bypassSecurityTrustHtml(svgWithSize);
   }
 }
 

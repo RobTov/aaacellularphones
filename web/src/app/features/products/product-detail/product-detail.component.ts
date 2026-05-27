@@ -49,6 +49,16 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
           <p class="text-gray-600 leading-relaxed mb-8">{{ product.description }}</p>
 
+          <div *ngIf="product.specifications && product.specifications.length" class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Specifications</h3>
+            <div class="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
+              <div *ngFor="let spec of product.specifications" class="grid grid-cols-3 gap-4 px-4 py-3 text-sm">
+                <span class="font-medium text-gray-700">{{ spec.name }}</span>
+                <span class="col-span-2 text-gray-600">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
+
           <div class="flex items-center gap-4">
             <div class="flex items-center border border-gray-300 rounded-lg">
               <button (click)="quantity = Math.max(1, quantity - 1); cdr.detectChanges()"

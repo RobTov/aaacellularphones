@@ -1,10 +1,44 @@
 package domain
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/lib/pq"
 )
+
+type Specification struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type Specifications []Specification
+
+func (s Specifications) Value() (driver.Value, error) {
+	if s == nil {
+		return []byte("[]"), nil
+	}
+	return json.Marshal(s)
+}
+
+func (s *Specifications) Scan(src any) error {
+	if src == nil {
+		*s = nil
+		return nil
+	}
+	var source []byte
+	switch v := src.(type) {
+	case []byte:
+		source = v
+	case string:
+		source = []byte(v)
+	default:
+		return errors.New("unsupported type for Specifications")
+	}
+	return json.Unmarshal(source, s)
+}
 
 type ProductStatus string
 
@@ -29,5 +63,6 @@ type Product struct {
 	CreatedAt   time.Time     `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at" db:"updated_at"`
 
-	CategoryName string `json:"category_name,omitempty" db:"category_name"`
+	CategoryName string        `json:"category_name,omitempty" db:"category_name"`
+	Specifications Specifications `json:"specifications" db:"specifications"`
 }
