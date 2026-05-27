@@ -7,55 +7,69 @@ import { User } from '../../../shared/models/user.model';
   standalone: false,
   template: `
     <div>
-      <div class="flex items-center justify-between mb-2">
-        <h1 style="font-weight:600;margin:0;">Users</h1>
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold text-gray-900">Users</h1>
       </div>
-      <mat-card>
-        <table mat-table [dataSource]="users" class="full-width">
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef>Email</th>
-            <td mat-cell *matCellDef="let u">{{ u.email }}</td>
-          </ng-container>
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let u">{{ u.first_name }} {{ u.last_name }}</td>
-          </ng-container>
-          <ng-container matColumnDef="role">
-            <th mat-header-cell *matHeaderCellDef>Role</th>
-            <td mat-cell *matCellDef="let u">
-              <span [style.background]="u.role === 'admin' ? '#3f51b5' : '#666'" style="color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;">{{ u.role }}</span>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="active">
-            <th mat-header-cell *matHeaderCellDef>Active</th>
-            <td mat-cell *matCellDef="let u">
-              <mat-icon [style.color]="u.is_active ? '#4caf50' : '#f44336'">{{ u.is_active ? 'check_circle' : 'cancel' }}</mat-icon>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="created">
-            <th mat-header-cell *matHeaderCellDef>Joined</th>
-            <td mat-cell *matCellDef="let u">{{ u.created_at | date }}</td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let u">
-              <button mat-icon-button color="warn" (click)="deleteUser(u)" [disabled]="u.role === 'admin'">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="columns"></tr>
-          <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-        </table>
-        <mat-paginator [length]="total" [pageSize]="20" (page)="load($event.pageIndex + 1)" showFirstLastButtons></mat-paginator>
-      </mat-card>
+
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50">
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Email</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Name</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Role</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Active</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Joined</th>
+                <th class="text-right px-6 py-3 font-medium text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of users" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ u.email }}</td>
+                <td class="px-6 py-4 text-gray-600">{{ u.first_name }} {{ u.last_name }}</td>
+                <td class="px-6 py-4">
+                  <span class="inline-flex px-2.5 py-0.5 text-xs font-medium text-white rounded-full"
+                        [style.background]="u.role === 'admin' ? '#6366f1' : '#64748b'">
+                    {{ u.role }}
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <app-icon [name]="u.is_active ? 'check_circle' : 'cancel'"
+                            [color]="u.is_active ? '#22c55e' : '#ef4444'" size="18px">
+                  </app-icon>
+                </td>
+                <td class="px-6 py-4 text-gray-500 text-xs">{{ u.created_at | date }}</td>
+                <td class="px-6 py-4 text-right">
+                  <button (click)="deleteUser(u)" [disabled]="u.role === 'admin'"
+                          class="p-1.5 text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-red-50 transition-colors">
+                    <app-icon name="delete" size="16px"></app-icon>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="users.length === 0">
+                <td colspan="6" class="px-6 py-8 text-center text-gray-400">No users found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Total: {{ total }}</span>
+          <div class="flex gap-2">
+            <button (click)="load(currentPage - 1)" [disabled]="currentPage <= 1"
+                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+            <button (click)="load(currentPage + 1)" [disabled]="users.length < 20"
+                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
 })
 export class UsersComponent implements OnInit {
   users: User[] = [];
   total = 0;
-  columns = ['email', 'name', 'role', 'active', 'created', 'actions'];
+  currentPage = 1;
 
   constructor(
     private api: ApiService,
@@ -67,6 +81,7 @@ export class UsersComponent implements OnInit {
   }
 
   load(page: number): void {
+    this.currentPage = page;
     this.api.getPaginated<User>('/admin/users', { page }).subscribe({
       next: r => {
         this.users = r.data;

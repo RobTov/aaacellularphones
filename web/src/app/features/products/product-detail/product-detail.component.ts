@@ -11,45 +11,64 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   selector: 'app-product-detail',
   standalone: false,
   template: `
-    <div class="container" *ngIf="product">
-      <div class="flex flex-wrap gap-2 mt-2">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" *ngIf="product">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <!-- Images -->
-        <div style="flex:1;min-width:300px;">
-          <img [src]="(product.images?.[0]) || 'assets/placeholder.svg'"
-               [alt]="product.name" style="width:100%;border-radius:12px;max-height:400px;object-fit:cover;">
-           <div class="flex gap-1 mt-1" *ngIf="(product?.images?.length ?? 0) > 1">
+        <div>
+          <img [src]="selectedImage || product.images[0] || 'assets/placeholder.svg'"
+               [alt]="product.name"
+               class="w-full rounded-2xl object-cover max-h-[500px]">
+          <div *ngIf="product.images.length > 1" class="flex gap-3 mt-4">
             <img *ngFor="let img of product.images" [src]="img"
-                 style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;"
-                 (click)="selectedImage = img" [class.selected]="img === selectedImage">
+                 (click)="selectedImage = img"
+                 class="w-20 h-20 object-cover rounded-xl cursor-pointer border-2 transition-colors"
+                 [class.border-blue-500]="img === selectedImage"
+                 [class.border-gray-200]="img !== selectedImage">
           </div>
         </div>
+
         <!-- Details -->
-        <div style="flex:1;min-width:300px;">
-          <h1 style="font-size:1.75rem;font-weight:700;margin:0 0 8px;">{{ product.name }}</h1>
-          <div style="color:#666;margin-bottom:16px;">{{ product.category_name }}</div>
-          <div class="flex items-center gap-1 mb-2">
-            <span style="font-size:2rem;font-weight:700;color:#3f51b5;">\${{ product.price.toFixed(2) }}</span>
-            <span *ngIf="product.compare_price" style="text-decoration:line-through;color:#999;font-size:1.25rem;">
+        <div>
+          <p class="text-sm font-medium text-blue-600 uppercase tracking-wider mb-2">{{ product.category_name }}</p>
+          <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ product.name }}</h1>
+          <div class="flex items-baseline gap-3 mb-6">
+            <span class="text-3xl font-bold text-blue-600">\${{ product.price.toFixed(2) }}</span>
+            <span *ngIf="product.compare_price" class="text-xl text-gray-400 line-through">
               \${{ product.compare_price.toFixed(2) }}
             </span>
           </div>
-          <div style="margin-bottom:16px;">
+
+          <div class="flex flex-wrap gap-2 mb-6">
             <span *ngIf="product.status === 'out_of_stock' || product.stock === 0"
-                  style="background:#f44336;color:#fff;padding:4px 12px;border-radius:4px;">Out of Stock</span>
+                  class="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-100 text-red-700 rounded-full">Out of Stock</span>
             <span *ngIf="product.stock > 0 && product.stock <= 5"
-                  style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:4px;">Only {{ product.stock }} left</span>
+                  class="inline-flex items-center px-3 py-1 text-sm font-medium bg-orange-100 text-orange-700 rounded-full">Only {{ product.stock }} left</span>
             <span *ngIf="product.stock > 5"
-                  style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:4px;">In Stock</span>
+                  class="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full">In Stock</span>
           </div>
-          <p style="line-height:1.6;color:#444;">{{ product.description }}</p>
-          <div class="flex items-center gap-1 mt-2">
-            <mat-form-field appearance="outline" style="width:100px;">
-              <mat-label>Qty</mat-label>
-              <input matInput type="number" [(ngModel)]="quantity" min="1" [max]="product.stock">
-            </mat-form-field>
-            <button mat-raised-button color="primary" size="large"
-                    [disabled]="product.status === 'out_of_stock' || product.stock === 0"
-                    (click)="addToCart()">
+
+          <p class="text-gray-600 leading-relaxed mb-8">{{ product.description }}</p>
+
+          <div class="flex items-center gap-4">
+            <div class="flex items-center border border-gray-300 rounded-lg">
+              <button (click)="quantity = Math.max(1, quantity - 1); cdr.detectChanges()"
+                      class="px-3 py-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors rounded-l-lg">
+                <app-icon name="remove" size="16px"></app-icon>
+              </button>
+              <span class="px-4 py-2.5 text-sm font-medium border-x border-gray-300 min-w-[48px] text-center">{{ quantity }}</span>
+              <button (click)="quantity = Math.min(product.stock, quantity + 1); cdr.detectChanges()"
+                      class="px-3 py-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors rounded-r-lg"
+                      [class.opacity-50]="quantity >= product.stock">
+                <app-icon name="add" size="16px"></app-icon>
+              </button>
+            </div>
+            <button
+              class="px-8 py-2.5 text-sm font-medium rounded-lg transition-colors"
+              [class]="(product.status === 'out_of_stock' || product.stock === 0)
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'"
+              [disabled]="product.status === 'out_of_stock' || product.stock === 0"
+              (click)="addToCart()">
               Add to Cart
             </button>
           </div>
@@ -57,42 +76,52 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
       </div>
 
       <!-- Reviews -->
-      <mat-card style="margin-top:32px;padding:24px;">
-        <h2 style="font-weight:600;margin:0 0 16px;">Reviews</h2>
-        <div *ngIf="auth.isAuthenticated()">
-          <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="flex flex-wrap gap-1 mb-4">
-            <mat-form-field appearance="outline" style="min-width:120px;">
-              <mat-label>Rating</mat-label>
-              <mat-select formControlName="rating">
-                <mat-option *ngFor="let r of [1,2,3,4,5]" [value]="r">{{ r }} Star{{ r > 1 ? 's' : '' }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline" style="flex:1;min-width:200px;">
-              <mat-label>Title</mat-label>
-              <input matInput formControlName="title">
-            </mat-form-field>
-            <mat-form-field appearance="outline" style="flex:2;min-width:300px;">
-              <mat-label>Comment</mat-label>
-              <textarea matInput formControlName="comment" rows="2"></textarea>
-            </mat-form-field>
-            <button mat-raised-button color="primary" type="submit" [disabled]="reviewForm.invalid">Submit</button>
+      <div class="mt-16 bg-white rounded-2xl border border-gray-200 p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Reviews</h2>
+
+        <div *ngIf="auth.isAuthenticated()" class="mb-8">
+          <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Rating</label>
+              <select formControlName="rating"
+                      class="w-32 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                <option *ngFor="let r of [1,2,3,4,5]" [value]="r">{{ r }} Star{{ r > 1 ? 's' : '' }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+              <input type="text" formControlName="title"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Comment</label>
+              <textarea formControlName="comment" rows="3"
+                        class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+            </div>
+            <button type="submit" [disabled]="reviewForm.invalid"
+                    class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors">
+              Submit
+            </button>
           </form>
         </div>
-        <div *ngIf="reviews.length === 0"><p style="color:#999;">No reviews yet.</p></div>
-        <mat-divider *ngFor="let r of reviews; let last = last"></mat-divider>
-        <div *ngFor="let r of reviews" style="padding:16px 0;">
-          <div class="flex items-center justify-between">
-            <strong>{{ r.user?.first_name || 'Anonymous' }}</strong>
-            <span>{{ r.rating }}/5 - {{ r.created_at | date }}</span>
-          </div>
-          <div *ngIf="r.title" style="font-weight:500;margin-top:4px;">{{ r.title }}</div>
-          <p style="margin:4px 0 0;color:#555;">{{ r.comment }}</p>
+
+        <div *ngIf="reviews.length === 0">
+          <p class="text-gray-400 text-center py-8">No reviews yet.</p>
         </div>
-      </mat-card>
+
+        <div *ngFor="let r of reviews" class="border-b border-gray-100 last:border-0 py-5 first:pt-0 last:pb-0">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-medium text-gray-900">{{ r.user?.first_name || 'Anonymous' }}</span>
+            <span class="text-sm text-gray-500">{{ r.rating }}/5 - {{ r.created_at | date }}</span>
+          </div>
+          <p *ngIf="r.title" class="font-medium text-gray-700 text-sm mb-1">{{ r.title }}</p>
+          <p class="text-gray-600 text-sm leading-relaxed">{{ r.comment }}</p>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .selected { border: 2px solid #3f51b5; }
+    :host { display: block; }
   `],
 })
 export class ProductDetailComponent implements OnInit {
@@ -101,6 +130,7 @@ export class ProductDetailComponent implements OnInit {
   selectedImage = '';
   quantity = 1;
   reviewForm: FormGroup;
+  Math = Math;
 
   constructor(
     private route: ActivatedRoute,
@@ -108,7 +138,7 @@ export class ProductDetailComponent implements OnInit {
     private cart: CartService,
     public auth: AuthService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef,
+    public cdr: ChangeDetectorRef,
   ) {
     this.reviewForm = this.fb.group({
       rating: [5, Validators.required],

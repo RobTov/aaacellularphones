@@ -7,54 +7,62 @@ import { Order } from '../../../shared/models/order.model';
   standalone: false,
   template: `
     <div>
-      <h1 style="font-weight:600;margin-bottom:24px;">Dashboard</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
       <!-- Stats -->
-      <div class="admin-grid mb-4">
-        <mat-card class="stat-card">
-          <div class="stat-value">\${{ totalRevenue.toFixed(2) }}</div>
-          <div class="stat-label">Total Revenue</div>
-        </mat-card>
-        <mat-card class="stat-card">
-          <div class="stat-value">{{ totalOrders }}</div>
-          <div class="stat-label">Orders</div>
-        </mat-card>
-        <mat-card class="stat-card">
-          <div class="stat-value">{{ totalProducts }}</div>
-          <div class="stat-label">Products</div>
-        </mat-card>
-        <mat-card class="stat-card">
-          <div class="stat-value">{{ totalUsers }}</div>
-          <div class="stat-label">Users</div>
-        </mat-card>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
+          <p class="text-3xl font-bold text-blue-600">\${{ totalRevenue.toFixed(2) }}</p>
+          <p class="text-sm text-gray-500 mt-1">Total Revenue</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
+          <p class="text-3xl font-bold text-blue-600">{{ totalOrders }}</p>
+          <p class="text-sm text-gray-500 mt-1">Orders</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
+          <p class="text-3xl font-bold text-blue-600">{{ totalProducts }}</p>
+          <p class="text-sm text-gray-500 mt-1">Products</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
+          <p class="text-3xl font-bold text-blue-600">{{ totalUsers }}</p>
+          <p class="text-sm text-gray-500 mt-1">Users</p>
+        </div>
       </div>
 
-      <!-- Revenue summary table instead of chart -->
-      <mat-card style="padding:16px;">
-        <h3 style="font-weight:600;margin:0 0 16px;">Recent Orders</h3>
-        <table mat-table [dataSource]="recentOrders" class="full-width">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef>ID</th>
-            <td mat-cell *matCellDef="let o">{{ o.id | slice:0:8 }}...</td>
-          </ng-container>
-          <ng-container matColumnDef="customer">
-            <th mat-header-cell *matHeaderCellDef>Customer</th>
-            <td mat-cell *matCellDef="let o">{{ o.user?.email || o.user_id | slice:0:8 }}</td>
-          </ng-container>
-          <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef>Amount</th>
-            <td mat-cell *matCellDef="let o">\${{ o.total_amount.toFixed(2) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let o">
-              <span [style.background]="o.status === 'delivered' ? '#4caf50' : o.status === 'cancelled' ? '#f44336' : '#ff9800'" style="color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;">{{ o.status }}</span>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id', 'customer', 'amount', 'status']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id', 'customer', 'amount', 'status'];"></tr>
-        </table>
-      </mat-card>
+      <!-- Recent Orders -->
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+          <h3 class="font-semibold text-gray-900">Recent Orders</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50">
+                <th class="text-left px-6 py-3 font-medium text-gray-500">ID</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Customer</th>
+                <th class="text-right px-6 py-3 font-medium text-gray-500">Amount</th>
+                <th class="text-right px-6 py-3 font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of recentOrders" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ o.id | slice:0:8 }}...</td>
+                <td class="px-6 py-4 text-gray-600">{{ o.user?.email || o.user_id | slice:0:8 }}</td>
+                <td class="px-6 py-4 text-right font-medium">\${{ o.total_amount.toFixed(2) }}</td>
+                <td class="px-6 py-4 text-right">
+                  <span class="inline-flex px-2.5 py-0.5 text-xs font-medium text-white rounded-full"
+                        [style.background]="o.status === 'delivered' ? '#22c55e' : o.status === 'cancelled' ? '#ef4444' : '#f59e0b'">
+                    {{ o.status }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="recentOrders.length === 0">
+                <td colspan="4" class="px-6 py-8 text-center text-gray-400">No orders yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   `,
 })

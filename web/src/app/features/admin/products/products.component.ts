@@ -10,98 +10,130 @@ import { ToastService } from '../../../core/services/toast.service';
   standalone: false,
   template: `
     <div>
-      <div class="flex items-center justify-between mb-2">
-        <h1 style="font-weight:600;margin:0;">Products</h1>
-        <button mat-raised-button color="primary" (click)="openForm()">+ New Product</button>
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold text-gray-900">Products</h1>
+        <button (click)="openForm()"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+          <app-icon name="plus" size="16px"></app-icon>
+          New Product
+        </button>
       </div>
 
-      <mat-card>
-        <table mat-table [dataSource]="products" class="full-width">
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let p">{{ p.name }}</td>
-          </ng-container>
-          <ng-container matColumnDef="price">
-            <th mat-header-cell *matHeaderCellDef>Price</th>
-            <td mat-cell *matCellDef="let p">\${{ p.price.toFixed(2) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef>Stock</th>
-            <td mat-cell *matCellDef="let p">{{ p.stock }}</td>
-          </ng-container>
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let p">
-              <span [style.background]="p.status === 'active' ? '#4caf50' : p.status === 'out_of_stock' ? '#ff9800' : '#f44336'"
-                    style="color:#fff;padding:2px 8px;border-radius:4px;font-size:0.8rem;">{{ p.status }}</span>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="category">
-            <th mat-header-cell *matHeaderCellDef>Category</th>
-            <td mat-cell *matCellDef="let p">{{ p.category_name }}</td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let p">
-              <button mat-icon-button (click)="openForm(p)"><mat-icon>edit</mat-icon></button>
-              <button mat-icon-button color="warn" (click)="deleteProduct(p)"><mat-icon>delete</mat-icon></button>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="columns"></tr>
-          <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-        </table>
-        <mat-paginator [length]="total" [pageSize]="20" (page)="load($event.pageIndex + 1)" showFirstLastButtons></mat-paginator>
-      </mat-card>
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50">
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Name</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Price</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Stock</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Status</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Category</th>
+                <th class="text-right px-6 py-3 font-medium text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of products" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ p.name }}</td>
+                <td class="px-6 py-4">\${{ p.price.toFixed(2) }}</td>
+                <td class="px-6 py-4">{{ p.stock }}</td>
+                <td class="px-6 py-4">
+                  <span class="inline-flex px-2.5 py-0.5 text-xs font-medium text-white rounded-full"
+                        [style.background]="p.status === 'active' ? '#22c55e' : p.status === 'out_of_stock' ? '#f59e0b' : '#ef4444'">
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-gray-600">{{ p.category_name }}</td>
+                <td class="px-6 py-4 text-right">
+                  <button (click)="openForm(p)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                    <app-icon name="edit" size="16px"></app-icon>
+                  </button>
+                  <button (click)="deleteProduct(p)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors ml-1">
+                    <app-icon name="delete" size="16px"></app-icon>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="products.length === 0">
+                <td colspan="6" class="px-6 py-8 text-center text-gray-400">No products found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Total: {{ total }}</span>
+          <div class="flex gap-2">
+            <button (click)="load(currentPage - 1)" [disabled]="currentPage <= 1"
+                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+            <button (click)="load(currentPage + 1)" [disabled]="products.length < 20"
+                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+          </div>
+        </div>
+      </div>
 
-      <!-- Form Dialog Overlay (inline) -->
-      <div *ngIf="showForm" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;">
-        <mat-card style="min-width:400px;max-width:600px;max-height:90vh;overflow:auto;padding:24px;">
-          <h2 style="font-weight:600;margin:0 0 16px;">{{ editing ? 'Edit' : 'New' }} Product</h2>
-          <form [formGroup]="form" (ngSubmit)="save()">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Slug</mat-label>
-              <input matInput formControlName="slug">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="3"></textarea>
-            </mat-form-field>
-            <div class="flex gap-2">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Price</mat-label>
-                <input matInput type="number" formControlName="price">
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Compare Price</mat-label>
-                <input matInput type="number" formControlName="compare_price">
-              </mat-form-field>
+      <!-- Form Overlay -->
+      <div *ngIf="showForm" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="showForm = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ editing ? 'Edit' : 'New' }} Product</h2>
+          <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+              <input type="text" formControlName="name"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
-            <div class="flex gap-2">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Stock</mat-label>
-                <input matInput type="number" formControlName="stock">
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Category</mat-label>
-                <mat-select formControlName="category_id">
-                  <mat-option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Slug</label>
+              <input type="text" formControlName="slug"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Images (JSON array)</mat-label>
-              <input matInput formControlName="images" placeholder='["url1","url2"]'>
-            </mat-form-field>
-            <div class="flex justify-end gap-1 mt-2">
-              <button mat-button type="button" (click)="showForm = false">Cancel</button>
-              <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">{{ editing ? 'Update' : 'Create' }}</button>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+              <textarea formControlName="description" rows="3"
+                        class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Price</label>
+                <input type="number" formControlName="price"
+                       class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Compare Price</label>
+                <input type="number" formControlName="compare_price"
+                       class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock</label>
+                <input type="number" formControlName="stock"
+                       class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                <select formControlName="category_id"
+                        class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                  <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Images (JSON array)</label>
+              <input type="text" formControlName="images" placeholder='["url1","url2"]'
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-400">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" (click)="showForm = false"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button type="submit" [disabled]="form.invalid"
+                      class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors">
+                {{ editing ? 'Update' : 'Create' }}
+              </button>
             </div>
           </form>
-        </mat-card>
+        </div>
       </div>
     </div>
   `,
@@ -110,7 +142,7 @@ export class AdminProductsComponent implements OnInit {
   products: Product[] = [];
   categories: Category[] = [];
   total = 0;
-  columns = ['name', 'price', 'stock', 'status', 'category', 'actions'];
+  currentPage = 1;
   showForm = false;
   editing: Product | null = null;
   form: FormGroup;
@@ -144,6 +176,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   load(page: number): void {
+    this.currentPage = page;
     this.api.get<{ success: boolean; data: Product[]; total: number }>('/products?page=' + page + '&limit=20').subscribe({
       next: r => {
         this.products = r.data || r as any;

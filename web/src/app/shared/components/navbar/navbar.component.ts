@@ -6,54 +6,61 @@ import { CartService } from '../../../core/services/cart.service';
   selector: 'app-navbar',
   standalone: false,
   template: `
-    <mat-toolbar color="primary" style="position:sticky;top:0;z-index:100;">
-      <div class="container flex items-center justify-between" style="padding:0 16px;">
-        <div class="flex items-center gap-2">
-          <button mat-icon-button *ngIf="auth.isAuthenticated()" class="menu-btn">
-            <mat-icon>menu</mat-icon>
-          </button>
-          <a routerLink="/" style="text-decoration:none;color:#fff;font-weight:700;font-size:1.25rem;">AAACellularPhones</a>
-        </div>
-        <div class="flex items-center gap-1">
-          <a mat-button routerLink="/products">Shop</a>
-          <a mat-button routerLink="/cart">
-            <mat-icon>shopping_cart</mat-icon>
-            <span *ngIf="cart.itemCount() > 0" class="cart-badge">{{ cart.itemCount() }}</span>
-          </a>
-          <ng-container *ngIf="auth.isAuthenticated(); else guest">
-            <a mat-button routerLink="/orders">My Orders</a>
-            <a mat-button *ngIf="auth.isAdmin()" routerLink="/admin">Admin</a>
-            <button mat-button [matMenuTriggerFor]="menu">
-              {{ auth.user()?.first_name || auth.user()?.email }}
-              <mat-icon>arrow_drop_down</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button mat-menu-item routerLink="/orders">My Orders</button>
-              <button mat-menu-item (click)="auth.logout()">Sign Out</button>
-            </mat-menu>
-          </ng-container>
-          <ng-template #guest>
-            <a mat-button routerLink="/auth/login">Sign In</a>
-            <a mat-raised-button routerLink="/auth/register" style="background:#fff;color:#3f51b5;">Register</a>
-          </ng-template>
+    <nav class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-3">
+            <a routerLink="/" class="text-xl font-bold text-gray-900 tracking-tight">AAACellularPhones</a>
+          </div>
+          <div class="flex items-center gap-2">
+            <a routerLink="/products" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+              Shop
+            </a>
+            <a routerLink="/cart" class="relative px-3 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+              <app-icon name="shopping_cart" size="20px"></app-icon>
+              <span *ngIf="cart.itemCount() > 0"
+                    class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {{ cart.itemCount() }}
+              </span>
+            </a>
+            <ng-container *ngIf="auth.isAuthenticated(); else guest">
+              <a routerLink="/orders" class="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+                My Orders
+              </a>
+              <a *ngIf="auth.isAdmin()" routerLink="/admin" class="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+                Admin
+              </a>
+              <div class="relative" (click)="menuOpen = !menuOpen" (clickOutside)="menuOpen = false">
+                <button class="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+                  {{ auth.user()?.first_name || auth.user()?.email }}
+                  <app-icon name="arrow_drop_down" size="16px"></app-icon>
+                </button>
+                <div *ngIf="menuOpen" class="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <a routerLink="/orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" (click)="menuOpen = false">My Orders</a>
+                  <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" (click)="auth.logout(); menuOpen = false">Sign Out</button>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #guest>
+              <a routerLink="/auth/login" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+                Sign In
+              </a>
+              <a routerLink="/auth/register" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                Register
+              </a>
+            </ng-template>
+          </div>
         </div>
       </div>
-    </mat-toolbar>
+    </nav>
   `,
   styles: [`
-    .cart-badge {
-      background: #f44336; color: #fff; border-radius: 50%;
-      padding: 2px 6px; font-size: 0.7rem; font-weight: 700;
-      position: absolute; top: 4px; right: -4px;
-    }
-    .menu-btn { display: none; }
-    @media (max-width: 768px) {
-      .menu-btn { display: inline-flex; }
-      a mat-icon { margin-right: 4px; }
-    }
+    :host { display: block; }
   `],
 })
 export class NavbarComponent {
+  menuOpen = false;
+
   constructor(
     public auth: AuthService,
     public cart: CartService,

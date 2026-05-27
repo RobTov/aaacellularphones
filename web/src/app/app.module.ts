@@ -5,23 +5,6 @@ import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ToastrModule } from 'ngx-toastr';
 
-// Angular Material
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
-
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
@@ -34,6 +17,7 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { ProductCardComponent } from './shared/components/product-card/product-card.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
+import { IconComponent } from './shared/components/icon/icon.component';
 import { TruncatePipe } from './shared/pipes/truncate.pipe';
 
 // Features
@@ -70,6 +54,7 @@ import { OrderDetailComponent } from './features/orders/order-detail/order-detai
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
+    IconComponent,
     ToastrModule.forRoot({
       timeOut: 3000,
       closeButton: true,
@@ -77,21 +62,6 @@ import { OrderDetailComponent } from './features/orders/order-detail/order-detai
       positionClass: 'toast-top-right',
       preventDuplicates: true,
     }),
-    MatToolbarModule,
-    MatButtonModule,
-    MatCardModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatSelectModule,
-    MatMenuModule,
-    MatBadgeModule,
-    MatProgressSpinnerModule,
-    MatPaginatorModule,
-    MatDividerModule,
-    MatSnackBarModule,
-    MatDialogModule,
-    MatTooltipModule,
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

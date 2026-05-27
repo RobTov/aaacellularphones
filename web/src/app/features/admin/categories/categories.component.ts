@@ -9,88 +9,113 @@ import { ToastService } from '../../../core/services/toast.service';
   standalone: false,
   template: `
     <div>
-      <div class="flex items-center justify-between mb-2">
-        <h1 style="font-weight:600;margin:0;">Categories</h1>
-        <button mat-raised-button color="primary" (click)="openForm()">+ New Category</button>
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold text-gray-900">Categories</h1>
+        <button (click)="openForm()"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+          <app-icon name="plus" size="16px"></app-icon>
+          New Category
+        </button>
       </div>
-      <mat-card>
-        <table mat-table [dataSource]="categories" class="full-width">
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let c">{{ c.name }}</td>
-          </ng-container>
-          <ng-container matColumnDef="slug">
-            <th mat-header-cell *matHeaderCellDef>Slug</th>
-            <td mat-cell *matCellDef="let c">{{ c.slug }}</td>
-          </ng-container>
-          <ng-container matColumnDef="sort_order">
-            <th mat-header-cell *matHeaderCellDef>Order</th>
-            <td mat-cell *matCellDef="let c">{{ c.sort_order }}</td>
-          </ng-container>
-          <ng-container matColumnDef="active">
-            <th mat-header-cell *matHeaderCellDef>Active</th>
-            <td mat-cell *matCellDef="let c">
-              <mat-icon [style.color]="c.is_active ? '#4caf50' : '#f44336'">{{ c.is_active ? 'check_circle' : 'cancel' }}</mat-icon>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let c">
-              <button mat-icon-button (click)="openForm(c)"><mat-icon>edit</mat-icon></button>
-              <button mat-icon-button color="warn" (click)="deleteCategory(c)"><mat-icon>delete</mat-icon></button>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="columns"></tr>
-          <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-        </table>
-      </mat-card>
 
-      <div *ngIf="showForm" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;">
-        <mat-card style="min-width:400px;padding:24px;">
-          <h2 style="font-weight:600;margin:0 0 16px;">{{ editing ? 'Edit' : 'New' }} Category</h2>
-          <form [formGroup]="form" (ngSubmit)="save()">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Slug</mat-label>
-              <input matInput formControlName="slug">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="2"></textarea>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Image URL</mat-label>
-              <input matInput formControlName="image_url">
-            </mat-form-field>
-            <div class="flex gap-2">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Sort Order</mat-label>
-                <input matInput type="number" formControlName="sort_order">
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Parent Category</mat-label>
-                <mat-select formControlName="parent_id">
-                  <mat-option [value]="null">None</mat-option>
-                  <mat-option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50">
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Name</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Slug</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Order</th>
+                <th class="text-left px-6 py-3 font-medium text-gray-500">Active</th>
+                <th class="text-right px-6 py-3 font-medium text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of categories" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ c.name }}</td>
+                <td class="px-6 py-4 text-gray-600">{{ c.slug }}</td>
+                <td class="px-6 py-4">{{ c.sort_order }}</td>
+                <td class="px-6 py-4">
+                  <app-icon [name]="c.is_active ? 'check_circle' : 'cancel'"
+                            [color]="c.is_active ? '#22c55e' : '#ef4444'" size="18px">
+                  </app-icon>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <button (click)="openForm(c)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                    <app-icon name="edit" size="16px"></app-icon>
+                  </button>
+                  <button (click)="deleteCategory(c)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors ml-1">
+                    <app-icon name="delete" size="16px"></app-icon>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="categories.length === 0">
+                <td colspan="5" class="px-6 py-8 text-center text-gray-400">No categories found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Form Overlay -->
+      <div *ngIf="showForm" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" (click)="showForm = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ editing ? 'Edit' : 'New' }} Category</h2>
+          <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+              <input type="text" formControlName="name"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
-            <div class="flex justify-end gap-1 mt-2">
-              <button mat-button type="button" (click)="showForm = false">Cancel</button>
-              <button mat-raised-button color="primary" type="submit">{{ editing ? 'Update' : 'Create' }}</button>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Slug</label>
+              <input type="text" formControlName="slug"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+              <textarea formControlName="description" rows="2"
+                        class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Image URL</label>
+              <input type="text" formControlName="image_url"
+                     class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Sort Order</label>
+                <input type="number" formControlName="sort_order"
+                       class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Parent Category</label>
+                <select formControlName="parent_id"
+                        class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                  <option [value]="null">None</option>
+                  <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" (click)="showForm = false"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button type="submit"
+                      class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                {{ editing ? 'Update' : 'Create' }}
+              </button>
             </div>
           </form>
-        </mat-card>
+        </div>
       </div>
     </div>
   `,
 })
 export class CategoriesComponent implements OnInit {
   categories: Category[] = [];
-  columns = ['name', 'slug', 'sort_order', 'active', 'actions'];
   showForm = false;
   editing: Category | null = null;
   form: FormGroup;

@@ -5,43 +5,45 @@ import { Product } from '../../../shared/models/product.model';
   selector: 'app-product-card',
   standalone: false,
   template: `
-    <mat-card [class.out-of-stock]="product.status === 'out_of_stock'" style="cursor:pointer; height: 100%; display: flex; flex-direction: column;"
-      [routerLink]="['/products', product.slug]">
-      <div style="position:relative;">
-        <img [src]="product.images?.[0] || 'assets/placeholder.svg'"
+    <div [class.opacity-70]="product.status === 'out_of_stock'"
+         class="group bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer flex flex-col h-full"
+         [routerLink]="['/products', product.slug]">
+      <div class="relative overflow-hidden">
+        <img [src]="product.images[0] || 'assets/placeholder.svg'"
              [alt]="product.name"
-             style="width:100%; height:200px; object-fit:cover; border-radius:12px 12px 0 0;">
+             class="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300">
         <span *ngIf="product.compare_price"
-              style="position:absolute;top:8px;left:8px;background:#f44336;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">
+              class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md">
           -{{ discount }}%
         </span>
         <span *ngIf="product.status === 'out_of_stock'"
-              style="position:absolute;top:8px;right:8px;background:#757575;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">
+              class="absolute top-3 right-3 bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-md">
           Out of Stock
         </span>
       </div>
-      <mat-card-content style="flex:1; padding:12px;">
-        <div style="font-size:0.8rem;color:#666;margin-bottom:4px;">{{ product.category_name }}</div>
-        <div style="font-weight:600;font-size:1rem;margin-bottom:8px;">{{ product.name }}</div>
-        <div class="flex items-center gap-1">
-          <span style="font-size:1.25rem;font-weight:700;color:#3f51b5;">\${{ product.price.toFixed(2) }}</span>
-          <span *ngIf="product.compare_price" style="text-decoration:line-through;color:#999;font-size:0.875rem;">
+      <div class="flex flex-col flex-1 p-4">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{{ product.category_name }}</p>
+        <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">{{ product.name }}</h3>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-lg font-bold text-blue-600">\${{ product.price.toFixed(2) }}</span>
+          <span *ngIf="product.compare_price" class="text-sm text-gray-400 line-through">
             \${{ product.compare_price.toFixed(2) }}
           </span>
         </div>
-      </mat-card-content>
-      <mat-card-actions style="padding:8px 12px 12px;">
-        <button mat-raised-button color="primary" class="full-width"
-                [disabled]="product.status === 'out_of_stock' || product.stock === 0"
-                (click)="$event.stopPropagation(); add.emit(product)">
-          {{ product.status === 'out_of_stock' || product.stock === 0 ? 'Unavailable' : 'Add to Cart' }}
-        </button>
-      </mat-card-actions>
-    </mat-card>
+        <div class="mt-auto">
+          <button
+            class="w-full py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200"
+            [class]="(product.status === 'out_of_stock' || product.stock === 0)
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'"
+            [disabled]="product.status === 'out_of_stock' || product.stock === 0"
+            (click)="$event.stopPropagation(); add.emit(product)">
+            {{ product.status === 'out_of_stock' || product.stock === 0 ? 'Unavailable' : 'Add to Cart' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `,
-  styles: [`
-    .out-of-stock { opacity: 0.7; }
-  `],
 })
 export class ProductCardComponent {
   @Input() product!: Product;
