@@ -9,49 +9,59 @@ import { ToastService } from '../../core/services/toast.service';
   selector: 'app-cart',
   standalone: false,
   template: `
-    <div class="container" style="max-width:800px;">
-      <h1 style="font-weight:600;">Shopping Cart</h1>
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
 
-      <div *ngIf="cart.items().length === 0" class="text-center mt-4">
-        <mat-icon style="font-size:64px;color:#ccc;">shopping_cart</mat-icon>
-        <p style="color:#666;">Your cart is empty.</p>
-        <button mat-raised-button color="primary" routerLink="/products">Browse Products</button>
+      <div *ngIf="cart.items().length === 0" class="text-center py-16">
+        <app-icon name="shopping_cart" size="56px" class="text-gray-300"></app-icon>
+        <p class="text-gray-500 mt-4 mb-6">Your cart is empty.</p>
+        <a routerLink="/products" class="inline-flex px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+          Browse Products
+        </a>
       </div>
 
       <div *ngIf="cart.items().length > 0">
-        <mat-card *ngFor="let item of cart.items()" style="margin-bottom:12px;padding:12px;">
-          <div class="flex items-center gap-2">
-            <img [src]="item.image || 'assets/placeholder.svg'" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
-            <div style="flex:1;">
-              <div style="font-weight:600;">{{ item.name }}</div>
-              <div style="color:#3f51b5;font-weight:700;">\${{ item.price.toFixed(2) }}</div>
+        <div class="space-y-3">
+          <div *ngFor="let item of cart.items()" class="bg-white rounded-xl border border-gray-200 p-4">
+            <div class="flex items-center gap-4">
+              <img [src]="item.image || 'assets/placeholder.svg'"
+                   class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-gray-900 truncate">{{ item.name }}</p>
+                <p class="text-blue-600 font-semibold mt-0.5">\${{ item.price.toFixed(2) }}</p>
+              </div>
+              <div class="flex items-center border border-gray-300 rounded-lg">
+                <button (click)="decrement(item)" [disabled]="item.quantity <= 1"
+                        class="px-2.5 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-colors rounded-l-lg">
+                  <app-icon name="remove" size="14px"></app-icon>
+                </button>
+                <span class="px-3 py-2 text-sm font-medium border-x border-gray-300 min-w-[40px] text-center">{{ item.quantity }}</span>
+                <button (click)="increment(item)" [disabled]="item.quantity >= item.stock"
+                        class="px-2.5 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-colors rounded-r-lg">
+                  <app-icon name="add" size="14px"></app-icon>
+                </button>
+              </div>
+              <div class="text-right min-w-[80px]">
+                <p class="font-semibold text-gray-900">\${{ (item.price * item.quantity).toFixed(2) }}</p>
+              </div>
+              <button (click)="cart.remove(item.productId)"
+                      class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
+                <app-icon name="delete" size="18px"></app-icon>
+              </button>
             </div>
-            <button mat-icon-button (click)="decrement(item)" [disabled]="item.quantity <= 1">
-              <mat-icon>remove</mat-icon>
-            </button>
-            <span style="font-weight:600;min-width:24px;text-align:center;">{{ item.quantity }}</span>
-            <button mat-icon-button (click)="increment(item)" [disabled]="item.quantity >= item.stock">
-              <mat-icon>add</mat-icon>
-            </button>
-            <div style="min-width:80px;text-align:right;font-weight:700;">
-              \${{ (item.price * item.quantity).toFixed(2) }}
-            </div>
-            <button mat-icon-button color="warn" (click)="cart.remove(item.productId)">
-              <mat-icon>delete</mat-icon>
-            </button>
           </div>
-        </mat-card>
+        </div>
 
-        <mat-card style="padding:16px;margin-top:16px;">
-          <div class="flex items-center justify-between">
-            <span style="font-size:1.25rem;font-weight:600;">Total:</span>
-            <span style="font-size:1.5rem;font-weight:700;color:#3f51b5;">\${{ cart.total().toFixed(2) }}</span>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-lg font-semibold text-gray-900">Total</span>
+            <span class="text-2xl font-bold text-blue-600">\${{ cart.total().toFixed(2) }}</span>
           </div>
-          <button mat-raised-button color="primary" class="full-width mt-2" size="large"
-                  (click)="checkout()" [disabled]="loading">
+          <button (click)="checkout()" [disabled]="loading"
+                  class="w-full py-3 px-6 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors">
             {{ loading ? 'Processing...' : 'Proceed to Checkout' }}
           </button>
-        </mat-card>
+        </div>
       </div>
     </div>
   `,

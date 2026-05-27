@@ -9,59 +9,61 @@ import { CartService } from '../../../core/services/cart.service';
   selector: 'app-product-list',
   standalone: false,
   template: `
-    <div class="container">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Filters -->
-      <mat-card style="margin-bottom:24px;padding:16px;">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <mat-form-field appearance="outline" style="min-width:200px;">
-              <mat-label>Category</mat-label>
-              <mat-select [(ngModel)]="filter.category_id" (selectionChange)="load()">
-                <mat-option value="">All Categories</mat-option>
-                <mat-option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline" style="min-width:200px;">
-              <mat-label>Search</mat-label>
-              <input matInput [(ngModel)]="filter.search" (keyup.enter)="load()" placeholder="Search products...">
-            </mat-form-field>
+      <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            <select [(ngModel)]="filter.category_id" (change)="load()"
+                    class="w-full sm:w-48 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+              <option value="">All Categories</option>
+              <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+            </select>
+            <input [(ngModel)]="filter.search" (keyup.enter)="load()" placeholder="Search products..."
+                   class="w-full sm:w-56 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-400">
           </div>
-          <div class="flex items-center gap-1">
-            <mat-form-field appearance="outline" style="min-width:160px;">
-              <mat-label>Sort By</mat-label>
-              <mat-select [(ngModel)]="filter.sort_by" (selectionChange)="load()">
-                <mat-option value="newest">Newest</mat-option>
-                <mat-option value="price">Price</mat-option>
-                <mat-option value="name">Name</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <button mat-icon-button (click)="toggleSortOrder()" matTooltip="Toggle order">
-              <mat-icon>{{ filter.sort_order === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select [(ngModel)]="filter.sort_by" (change)="load()"
+                    class="flex-1 sm:flex-none px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+              <option value="newest">Newest</option>
+              <option value="price">Price</option>
+              <option value="name">Name</option>
+            </select>
+            <button (click)="toggleSortOrder()"
+                    class="p-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
+              <app-icon [name]="filter.sort_order === 'desc' ? 'arrow_downward' : 'arrow_upward'" size="18px"></app-icon>
             </button>
           </div>
         </div>
-      </mat-card>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div *ngFor="let _ of [1,2,3,4,5,6,7,8]" class="loading-shimmer h-96 rounded-xl"></div>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!loading && products.length === 0" class="text-center py-16">
+        <app-icon name="search_off" size="56px" class="text-gray-300"></app-icon>
+        <p class="text-gray-500 mt-4">No products found.</p>
+      </div>
 
       <!-- Products -->
-      <div *ngIf="loading" class="product-grid">
-        <div *ngFor="let _ of [1,2,3,4,5,6]" class="loading-shimmer" style="height:360px;"></div>
-      </div>
-
-      <div *ngIf="!loading && products.length === 0" class="text-center mt-4">
-        <mat-icon style="font-size:64px;color:#ccc;">search_off</mat-icon>
-        <p style="color:#666;">No products found.</p>
-      </div>
-
-      <div class="product-grid" *ngIf="!loading">
-        <app-product-card *ngFor="let p of products" [product]="p" (add)="addToCart($event)">
-        </app-product-card>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="!loading && products.length > 0">
+        <app-product-card *ngFor="let p of products" [product]="p" (add)="addToCart($event)"></app-product-card>
       </div>
 
       <!-- Pagination -->
-      <div class="flex justify-center mt-4 mb-4" *ngIf="totalPages > 1">
-        <mat-paginator [length]="total" [pageSize]="limit" [pageIndex]="page - 1"
-          (page)="changePage($event)" showFirstLastButtons>
-        </mat-paginator>
+      <div *ngIf="totalPages > 1" class="flex justify-center items-center gap-2 mt-8">
+        <button (click)="changePage(page - 1)" [disabled]="page <= 1"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          Previous
+        </button>
+        <span class="text-sm text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+        <button (click)="changePage(page + 1)" [disabled]="page >= totalPages"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          Next
+        </button>
       </div>
     </div>
   `,
@@ -126,9 +128,10 @@ export class ProductListComponent implements OnInit {
     this.load();
   }
 
-  changePage(e: any): void {
-    this.page = e.pageIndex + 1;
-    this.filter.page = this.page;
+  changePage(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.page = p;
+    this.filter.page = p;
     this.load();
   }
 

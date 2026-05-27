@@ -6,30 +6,39 @@ import { Order } from '../../../shared/models/order.model';
   selector: 'app-order-list',
   standalone: false,
   template: `
-    <div class="container" style="max-width:900px;">
-      <h1 style="font-weight:600;">My Orders</h1>
-      <div *ngIf="loading" class="flex justify-center mt-4"><mat-spinner diameter="40"></mat-spinner></div>
-      <div *ngIf="!loading && orders.length === 0" class="text-center mt-4">
-        <mat-icon style="font-size:64px;color:#ccc;">receipt_long</mat-icon>
-        <p style="color:#666;">No orders yet.</p>
-        <button mat-raised-button color="primary" routerLink="/products">Start Shopping</button>
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-8">My Orders</h1>
+
+      <div *ngIf="loading" class="flex justify-center py-16">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
-      <mat-card *ngFor="let o of orders" style="margin-bottom:12px;cursor:pointer;" [routerLink]="['/orders', o.id]">
-        <mat-card-content>
+
+      <div *ngIf="!loading && orders.length === 0" class="text-center py-16">
+        <app-icon name="receipt_long" size="56px" class="text-gray-300"></app-icon>
+        <p class="text-gray-500 mt-4 mb-6">No orders yet.</p>
+        <a routerLink="/products" class="inline-flex px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+          Start Shopping
+        </a>
+      </div>
+
+      <div class="space-y-3" *ngIf="!loading && orders.length > 0">
+        <div *ngFor="let o of orders" [routerLink]="['/orders', o.id]"
+             class="bg-white rounded-xl border border-gray-200 p-5 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all">
           <div class="flex items-center justify-between">
             <div>
-              <div style="font-weight:600;">Order #{{ o.id | slice:0:8 }}...</div>
-              <div style="color:#666;font-size:0.875rem;">{{ o.created_at | date:'medium' }}</div>
+              <p class="font-semibold text-gray-900">Order #{{ o.id | slice:0:8 }}...</p>
+              <p class="text-sm text-gray-500 mt-0.5">{{ o.created_at | date:'medium' }}</p>
             </div>
             <div class="text-right">
-              <span [style.background]="statusColor(o.status)" style="color:#fff;padding:2px 12px;border-radius:12px;font-size:0.8rem;">
+              <span class="inline-flex px-3 py-1 text-xs font-medium text-white rounded-full"
+                    [style.background]="statusColor(o.status)">
                 {{ o.status }}
               </span>
-              <div style="font-weight:700;margin-top:4px;">\${{ o.total_amount.toFixed(2) }}</div>
+              <p class="font-bold text-gray-900 mt-1.5">\${{ o.total_amount.toFixed(2) }}</p>
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -58,9 +67,9 @@ export class OrderListComponent implements OnInit {
 
   statusColor(s: string): string {
     const map: Record<string, string> = {
-      pending: '#ff9800', confirmed: '#2196f3', processing: '#9c27b0',
-      shipped: '#3f51b5', delivered: '#4caf50', cancelled: '#f44336',
+      pending: '#f59e0b', confirmed: '#3b82f6', processing: '#8b5cf6',
+      shipped: '#6366f1', delivered: '#22c55e', cancelled: '#ef4444',
     };
-    return map[s] || '#999';
+    return map[s] || '#94a3b8';
   }
 }

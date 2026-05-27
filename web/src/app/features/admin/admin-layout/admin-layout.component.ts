@@ -4,60 +4,49 @@ import { Component } from '@angular/core';
   standalone: false,
   selector: 'app-admin-layout',
   template: `
-    <div style="display:flex;min-height:calc(100vh - 64px);">
-      <nav style="width:240px;background:#fff;border-right:2px solid #e0e0e0;flex-shrink:0;padding:16px 0;">
-        <a routerLink="/admin/dashboard" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">dashboard</mat-icon>
-          Dashboard
+    <div class="flex min-h-[calc(100vh-4rem)]">
+      <!-- Sidebar -->
+      <aside class="w-60 bg-white border-r border-gray-200 flex-shrink-0 hidden lg:block">
+        <nav class="py-4">
+          <a *ngFor="let link of navLinks" [routerLink]="link.path" routerLinkActive="active-link"
+             class="flex items-center gap-3 px-5 py-3 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors">
+            <app-icon [name]="link.icon" size="18px" class="flex-shrink-0"></app-icon>
+            {{ link.label }}
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Mobile Nav -->
+      <div class="lg:hidden border-b border-gray-200 bg-white px-4 py-3 flex gap-2 overflow-x-auto">
+        <a *ngFor="let link of navLinks" [routerLink]="link.path" routerLinkActive="active-link"
+           class="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors whitespace-nowrap">
+          {{ link.label }}
         </a>
-        <a routerLink="/admin/users" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">people</mat-icon>
-          Users
-        </a>
-        <a routerLink="/admin/products" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">inventory_2</mat-icon>
-          Products
-        </a>
-        <a routerLink="/admin/categories" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">category</mat-icon>
-          Categories
-        </a>
-        <a routerLink="/admin/orders" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">receipt_long</mat-icon>
-          Orders
-        </a>
-        <a routerLink="/admin/payments" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">payments</mat-icon>
-          Payments
-        </a>
-        <a routerLink="/admin/reviews" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">star</mat-icon>
-          Reviews
-        </a>
-        <a routerLink="/admin/logs" routerLinkActive="active"
-           style="display:flex;align-items:center;gap:12px;padding:14px 24px;text-decoration:none;color:#333;font-size:0.95rem;">
-          <mat-icon style="font-size:22px;width:22px;height:22px;">history</mat-icon>
-          Logs
-        </a>
-      </nav>
-      <main style="flex:1;padding:24px;background:#f5f5f5;">
+      </div>
+
+      <!-- Content -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
         <router-outlet></router-outlet>
       </main>
     </div>
   `,
   styles: [`
-    .active {
-      background: #e8eaf6 !important;
-      color: #3f51b5 !important;
+    .active-link {
+      background-color: #eff6ff !important;
+      color: #2563eb !important;
       font-weight: 600;
     }
   `],
 })
-export class AdminLayoutComponent {}
+export class AdminLayoutComponent {
+  navLinks = [
+    { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
+    { path: '/admin/users', icon: 'people', label: 'Users' },
+    { path: '/admin/products', icon: 'inventory_2', label: 'Products' },
+    { path: '/admin/categories', icon: 'category', label: 'Categories' },
+    { path: '/admin/orders', icon: 'receipt_long', label: 'Orders' },
+    { path: '/admin/payments', icon: 'payments', label: 'Payments' },
+    { path: '/admin/reviews', icon: 'star', label: 'Reviews' },
+    { path: '/admin/logs', icon: 'history', label: 'Logs' },
+  ];
+}
