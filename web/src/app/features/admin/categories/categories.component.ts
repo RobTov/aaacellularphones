@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { Category } from '../../../shared/models/category.model';
@@ -99,6 +99,7 @@ export class CategoriesComponent implements OnInit {
     private api: ApiService,
     private fb: FormBuilder,
     private toast: ToastService,
+    private cdr: ChangeDetectorRef,
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -117,7 +118,10 @@ export class CategoriesComponent implements OnInit {
 
   load(): void {
     this.api.get<{ success: boolean; data: Category[] }>('/categories').subscribe({
-      next: r => this.categories = r.data || r as any,
+      next: r => {
+        this.categories = r.data || r as any;
+        this.cdr.detectChanges();
+      },
     });
   }
 
@@ -136,13 +140,17 @@ export class CategoriesComponent implements OnInit {
         this.toast.success(this.editing ? 'Category updated.' : 'Category created.');
         this.showForm = false;
         this.load();
+        this.cdr.detectChanges();
       },
     });
   }
 
   deleteCategory(c: Category): void {
     if (confirm(`Delete "${c.name}"?`)) {
-      this.api.delete('/admin/categories/' + c.id).subscribe(() => this.load());
+      this.api.delete('/admin/categories/' + c.id).subscribe(() => {
+        this.load();
+        this.cdr.detectChanges();
+      });
     }
   }
 }

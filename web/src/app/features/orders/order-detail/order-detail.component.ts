@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Order } from '../../../shared/models/order.model';
@@ -53,12 +53,16 @@ export class OrderDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private api: ApiService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
-    this.api.get<{ success: boolean; data: Order }>('/orders/' + id).subscribe({
-      next: r => this.order = r.data || r as any,
+    this.api.get<Order>('/orders/' + id).subscribe({
+      next: r => {
+        this.order = r;
+        this.cdr.detectChanges();
+      },
     });
   }
 

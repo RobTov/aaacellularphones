@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Product } from '../../../shared/models/product.model';
@@ -108,6 +108,7 @@ export class ProductDetailComponent implements OnInit {
     private cart: CartService,
     public auth: AuthService,
     private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
   ) {
     this.reviewForm = this.fb.group({
       rating: [5, Validators.required],
@@ -118,14 +119,18 @@ export class ProductDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug')!;
-    this.api.get<{ success: boolean; data: Product }>('/products/slug/' + slug).subscribe({
+    this.api.get<Product>('/products/slug/' + slug).subscribe({
       next: r => {
-        this.product = r.data || r as any;
-        this.selectedImage = this.product.images?.[0] || '';
+        this.product = r;
+        this.selectedImage = r.images?.[0] || '';
+        this.cdr.detectChanges();
+        this.api.get<Review[]>('/products/' + r.id + '/reviews').subscribe({
+          next: revs => {
+            this.reviews = revs;
+            this.cdr.detectChanges();
+          },
+        });
       },
-    });
-    this.api.get<{ success: boolean; data: Review[] }>('/products/' + this.route.snapshot.paramMap.get('slug') + '/reviews').subscribe({
-      next: r => this.reviews = r.data || r as any,
     });
   }
 
@@ -135,11 +140,14 @@ export class ProductDetailComponent implements OnInit {
 
   submitReview(): void {
     if (!this.product || this.reviewForm.invalid) return;
-    this.api.post('/products/' + this.product.id + '/reviews', this.reviewForm.value).subscribe({
+    this.api.post<Review>('/products/' + this.product.id + '/reviews', this.reviewForm.value).subscribe({
       next: () => {
         this.reviewForm.reset({ rating: 5, title: '', comment: '' });
-        this.api.get<{ success: boolean; data: Review[] }>('/products/' + this.product!.id + '/reviews').subscribe({
-          next: r => this.reviews = r.data || r as any,
+        this.api.get<Review[]>('/products/' + this.product!.id + '/reviews').subscribe({
+          next: r => {
+            this.reviews = r;
+            this.cdr.detectChanges();
+          },
         });
       },
     });

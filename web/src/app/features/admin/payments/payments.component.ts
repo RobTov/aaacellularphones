@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Payment } from '../../../shared/models/payment.model';
 
@@ -50,7 +50,10 @@ export class PaymentsComponent implements OnInit {
   total = 0;
   columns = ['id', 'order', 'amount', 'currency', 'status', 'created'];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.load(1);
@@ -63,6 +66,7 @@ export class PaymentsComponent implements OnInit {
         // Payments are embedded in orders; flatten
         this.payments = [];
         this.total = r.total || 0;
+        this.cdr.detectChanges();
       },
     });
   }

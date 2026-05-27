@@ -4,6 +4,8 @@ import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthResponse, LoginInput, RegisterInput, User } from '../../shared/models/user.model';
 
+export { AuthResponse };
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private tokenKey = 'auth_token';

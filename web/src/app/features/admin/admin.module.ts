@@ -20,6 +20,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { AdminGuard } from '../../core/guards/admin.guard';
+import { AdminLayoutComponent } from './admin-layout/admin-layout.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { UsersComponent } from './users/users.component';
 import { AdminProductsComponent } from './products/products.component';
@@ -30,19 +31,27 @@ import { AdminReviewsComponent } from './reviews/reviews.component';
 import { LogsComponent } from './logs/logs.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [AdminGuard] },
-  { path: 'users', component: UsersComponent, canActivate: [AdminGuard] },
-  { path: 'products', component: AdminProductsComponent, canActivate: [AdminGuard] },
-  { path: 'categories', component: CategoriesComponent, canActivate: [AdminGuard] },
-  { path: 'orders', component: AdminOrdersComponent, canActivate: [AdminGuard] },
-  { path: 'payments', component: PaymentsComponent, canActivate: [AdminGuard] },
-  { path: 'reviews', component: AdminReviewsComponent, canActivate: [AdminGuard] },
-  { path: 'logs', component: LogsComponent, canActivate: [AdminGuard] },
+  {
+    path: '',
+    component: AdminLayoutComponent,
+    canActivate: [AdminGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: DashboardComponent },
+      { path: 'users', component: UsersComponent },
+      { path: 'products', component: AdminProductsComponent },
+      { path: 'categories', component: CategoriesComponent },
+      { path: 'orders', component: AdminOrdersComponent },
+      { path: 'payments', component: PaymentsComponent },
+      { path: 'reviews', component: AdminReviewsComponent },
+      { path: 'logs', component: LogsComponent },
+    ],
+  },
 ];
 
 @NgModule({
   declarations: [
+    AdminLayoutComponent,
     DashboardComponent,
     UsersComponent,
     AdminProductsComponent,

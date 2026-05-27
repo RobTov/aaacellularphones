@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { Category } from '../../../shared/models/category.model';
@@ -79,6 +79,7 @@ export class ProductListComponent implements OnInit {
     private api: ApiService,
     private cart: CartService,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -91,20 +92,28 @@ export class ProductListComponent implements OnInit {
   }
 
   loadCategories(): void {
-    this.api.get<{ success: boolean; data: Category[] }>('/categories').subscribe({
-      next: r => this.categories = r.data || r as any,
+    this.api.get<Category[]>('/categories').subscribe({
+      next: r => {
+        this.categories = r;
+        this.cdr.detectChanges();
+      },
+      error: () => console.warn('Failed to load categories'),
     });
   }
 
   load(): void {
     this.loading = true;
-    this.api.get<{ success: boolean; data: Product[]; total: number }>('/products', this.filter).subscribe({
+    this.api.getPaginated<Product>('/products', this.filter).subscribe({
       next: r => {
-        this.products = r.data || r as any;
-        this.total = r.total || 0;
+        this.products = r.data;
+        this.total = r.total;
         this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => this.loading = false,
+      error: () => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
     });
   }
 

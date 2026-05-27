@@ -51,7 +51,7 @@ func Load() *Config {
 
 		CDNURL: getEnv("CDN_URL", ""),
 
-		CORSOrigins: getEnv("CORS_ORIGINS", "http://localhost:4200"),
+		CORSOrigins: getEnv("CORS_ORIGINS", "http://localhost:4200,http://127.0.0.1:4200"),
 	}
 }
 

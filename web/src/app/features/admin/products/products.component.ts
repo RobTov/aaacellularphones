@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { Product } from '../../../shared/models/product.model';
@@ -119,6 +119,7 @@ export class AdminProductsComponent implements OnInit {
     private api: ApiService,
     private fb: FormBuilder,
     private toast: ToastService,
+    private cdr: ChangeDetectorRef,
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -135,13 +136,20 @@ export class AdminProductsComponent implements OnInit {
   ngOnInit(): void {
     this.load(1);
     this.api.get<{ success: boolean; data: Category[] }>('/categories').subscribe({
-      next: r => this.categories = r.data || r as any,
+      next: r => {
+        this.categories = r.data || r as any;
+        this.cdr.detectChanges();
+      },
     });
   }
 
   load(page: number): void {
     this.api.get<{ success: boolean; data: Product[]; total: number }>('/products?page=' + page + '&limit=20').subscribe({
-      next: r => { this.products = r.data || r as any; this.total = r.total || 0; },
+      next: r => {
+        this.products = r.data || r as any;
+        this.total = r.total || 0;
+        this.cdr.detectChanges();
+      },
     });
   }
 
@@ -169,13 +177,17 @@ export class AdminProductsComponent implements OnInit {
         this.toast.success(this.editing ? 'Product updated.' : 'Product created.');
         this.showForm = false;
         this.load(1);
+        this.cdr.detectChanges();
       },
     });
   }
 
   deleteProduct(p: Product): void {
     if (confirm(`Delete "${p.name}"?`)) {
-      this.api.delete('/admin/products/' + p.id).subscribe(() => this.load(1));
+      this.api.delete('/admin/products/' + p.id).subscribe(() => {
+        this.load(1);
+        this.cdr.detectChanges();
+      });
     }
   }
 

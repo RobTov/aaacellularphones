@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { User } from '../../../shared/models/user.model';
 
@@ -57,21 +57,31 @@ export class UsersComponent implements OnInit {
   total = 0;
   columns = ['email', 'name', 'role', 'active', 'created', 'actions'];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.load(1);
   }
 
   load(page: number): void {
-    this.api.get<{ success: boolean; data: User[]; total: number }>('/admin/users?page=' + page).subscribe({
-      next: r => { this.users = r.data || r as any; this.total = r.total || 0; },
+    this.api.getPaginated<User>('/admin/users', { page }).subscribe({
+      next: r => {
+        this.users = r.data;
+        this.total = r.total;
+        this.cdr.detectChanges();
+      },
     });
   }
 
   deleteUser(u: User): void {
     if (confirm(`Delete user ${u.email}?`)) {
-      this.api.delete('/admin/users/' + u.id).subscribe(() => this.load(1));
+      this.api.delete('/admin/users/' + u.id).subscribe(() => {
+        this.load(1);
+        this.cdr.detectChanges();
+      });
     }
   }
 }

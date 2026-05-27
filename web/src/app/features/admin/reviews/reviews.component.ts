@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Review } from '../../../shared/models/review.model';
 
@@ -52,32 +52,39 @@ export class AdminReviewsComponent implements OnInit {
   reviews: Review[] = [];
   columns = ['user', 'rating', 'title', 'approved', 'created', 'actions'];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.load();
   }
 
   load(): void {
-    // Load reviews from products - simplified: fetch reviews for recent products
-    this.api.get<{ success: boolean; data: any[] }>('/products?limit=10').subscribe({
-      next: r => {
-        const products = r.data || (r as any);
+    this.api.get<any[]>('/products?limit=10').subscribe({
+      next: () => {
         this.reviews = [];
-        // For admin, we'd need a dedicated endpoint; this shows the pattern
+        this.cdr.detectChanges();
       },
     });
   }
 
   approve(r: Review): void {
     this.api.put('/admin/reviews/' + r.id + '/approve', {}).subscribe({
-      next: () => { r.is_approved = true; },
+      next: () => {
+        r.is_approved = true;
+        this.cdr.detectChanges();
+      },
     });
   }
 
   deleteReview(r: Review): void {
     if (confirm('Delete this review?')) {
-      this.api.delete('/admin/reviews/' + r.id).subscribe(() => this.load());
+      this.api.delete('/admin/reviews/' + r.id).subscribe(() => {
+        this.load();
+        this.cdr.detectChanges();
+      });
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Order } from '../../../shared/models/order.model';
 
@@ -65,19 +65,28 @@ export class DashboardComponent implements OnInit {
   totalUsers = 0;
   recentOrders: Order[] = [];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
-    this.api.get<{ success: boolean; data: Order[]; total: number }>('/admin/orders?limit=5').subscribe({
-      next: res => {
-        const orders = res.data || (res as any as Order[]);
-        this.recentOrders = orders;
-        this.totalOrders = res.total || orders.length;
-        this.totalRevenue = orders.filter(o => o.status === 'delivered' || o.status === 'confirmed')
+    this.api.getPaginated<Order>('/admin/orders', { limit: 5 }).subscribe({
+      next: r => {
+        this.recentOrders = r.data;
+        this.totalOrders = r.total;
+        this.totalRevenue = r.data.filter(o => o.status === 'delivered' || o.status === 'confirmed')
           .reduce((s, o) => s + o.total_amount, 0);
+        this.cdr.detectChanges();
       },
     });
-    this.api.get<{ success: boolean; total: number }>('/products?limit=1').subscribe(r => this.totalProducts = r.total || 0);
-    this.api.get<{ success: boolean; total: number }>('/admin/users?limit=1').subscribe(r => this.totalUsers = r.total || 0);
+    this.api.getPaginated<any>('/products', { limit: 1 }).subscribe(r => {
+      this.totalProducts = r.total;
+      this.cdr.detectChanges();
+    });
+    this.api.getPaginated<any>('/admin/users', { limit: 1 }).subscribe(r => {
+      this.totalUsers = r.total;
+      this.cdr.detectChanges();
+    });
   }
 }

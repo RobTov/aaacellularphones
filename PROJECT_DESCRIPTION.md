@@ -1,6 +1,6 @@
-# AAACellularPhones Marketplace Backend
+# AAACellularPhones Marketplace
 
-A production-grade marketplace backend built with **Go** using **Clean Architecture** and **PostgreSQL**.
+A full-stack marketplace with a **Go** backend (Clean Architecture + PostgreSQL) and an **Angular 19** frontend.
 
 ## Tech Stack
 

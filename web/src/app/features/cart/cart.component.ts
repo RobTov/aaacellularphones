@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { CartService, CartItem } from '../../core/services/cart.service';
 import { ApiService } from '../../core/services/api.service';
@@ -65,6 +65,7 @@ export class CartComponent {
     private auth: AuthService,
     private router: Router,
     private toast: ToastService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   increment(item: CartItem): void {
@@ -83,19 +84,23 @@ export class CartComponent {
     }
     this.loading = true;
     const items = this.cart.items().map(i => ({ product_id: i.productId, quantity: i.quantity }));
-    this.api.post<{ success: boolean; data: { id: string } }>('/orders', { items }).subscribe({
+    this.api.post<{ id: string }>('/orders', { items }).subscribe({
       next: order => {
-        const orderId = order.data?.id || (order as any).id;
-        this.api.post<{ success: boolean; data: { url: string } }>('/payments/checkout', { order_id: orderId }).subscribe({
+        this.api.post<{ url: string }>('/payments/checkout', { order_id: order.id }).subscribe({
           next: res => {
-            const url = res.data?.url || (res as any).url;
             this.cart.clear();
-            window.location.href = url;
+            window.location.href = res.url;
           },
-          error: () => this.loading = false,
+          error: () => {
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
         });
       },
-      error: () => this.loading = false,
+      error: () => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
     });
   }
 }

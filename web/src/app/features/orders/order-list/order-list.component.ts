@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Order } from '../../../shared/models/order.model';
 
@@ -37,12 +37,22 @@ export class OrderListComponent implements OnInit {
   orders: Order[] = [];
   loading = true;
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
-    this.api.get<{ success: boolean; data: Order[] }>('/orders').subscribe({
-      next: r => { this.orders = r.data || r as any; this.loading = false; },
-      error: () => this.loading = false,
+    this.api.get<Order[]>('/orders').subscribe({
+      next: r => {
+        this.orders = r;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
     });
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Order, OrderStatus } from '../../../shared/models/order.model';
 import { ToastService } from '../../../core/services/toast.service';
@@ -52,6 +52,7 @@ export class AdminOrdersComponent implements OnInit {
   constructor(
     private api: ApiService,
     private toast: ToastService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -59,8 +60,12 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   load(page: number): void {
-    this.api.get<{ success: boolean; data: Order[]; total: number }>('/admin/orders?page=' + page).subscribe({
-      next: r => { this.orders = r.data || r as any; this.total = r.total || 0; },
+    this.api.getPaginated<Order>('/admin/orders', { page }).subscribe({
+      next: r => {
+        this.orders = r.data;
+        this.total = r.total;
+        this.cdr.detectChanges();
+      },
     });
   }
 
@@ -69,6 +74,7 @@ export class AdminOrdersComponent implements OnInit {
       next: () => {
         o.status = status;
         this.toast.success('Order status updated.');
+        this.cdr.detectChanges();
       },
     });
   }

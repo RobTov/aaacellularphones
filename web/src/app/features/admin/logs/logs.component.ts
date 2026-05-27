@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { Log } from '../../../shared/models/log.model';
 
@@ -61,15 +61,22 @@ export class LogsComponent implements OnInit {
   total = 0;
   columns = ['id', 'table_name', 'action', 'record_id', 'user_id', 'created_at'];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.load(1);
   }
 
   load(page: number): void {
-    this.api.get<{ success: boolean; data: Log[]; total: number }>('/admin/logs?page=' + page).subscribe({
-      next: r => { this.logs = r.data || r as any; this.total = r.total || 0; },
+    this.api.getPaginated<Log>('/admin/logs', { page }).subscribe({
+      next: r => {
+        this.logs = r.data;
+        this.total = r.total;
+        this.cdr.detectChanges();
+      },
     });
   }
 }

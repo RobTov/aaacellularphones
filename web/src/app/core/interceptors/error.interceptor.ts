@@ -23,7 +23,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         } else if (err.message) {
           msg = err.message;
         }
-        if (err.status === 401) {
+        if (err.status === 401 && !req.url.includes('/auth/login')) {
           this.auth.logout();
           msg = 'Session expired. Please login again.';
         }
