@@ -29,15 +29,17 @@ A full-stack marketplace with a **Go** backend (Clean Architecture + PostgreSQL)
 │   ├── usecase/usecase.go      # Business logic (all use cases)
 │   ├── delivery/               # HTTP handlers + router
 │   │   ├── auth_handler.go     # Auth + User handlers
-│   │   ├── category_handler.go # Category, Product, Review handlers
+│   │   ├── category_handler.go # Category, Product, Review handlers + image upload
 │   │   ├── order_handler.go    # Order + Payment handlers
-│   │   └── router.go           # Route definitions
+│   │   └── router.go           # Route definitions (includes /uploads/ static serve)
 │   └── middleware/             # Auth (JWT) + CORS middleware
 ├── pkg/                        # Shared utilities
 │   ├── jwt/                    # Token generation/validation
 │   ├── hash/                   # bcrypt password hashing
 │   └── response/               # Standard API response helpers
 ├── migrations/001_initial.sql  # DB schema + seed data
+├── migrations/003_specifications.sql  # Added: specifications JSONB column
+├── uploads/                    # Local image storage (gitignored)
 ├── docker-compose.yml          # PostgreSQL on port 5433
 ├── Dockerfile                  # Multi-stage build
 ├── .env.example                # Environment variables template
@@ -60,6 +62,10 @@ A full-stack marketplace with a **Go** backend (Clean Architecture + PostgreSQL)
 | Orders → Payments | One-to-One |
 | Products → Reviews | One-to-Many |
 | Users (Admins) → AdminLogs | One-to-Many |
+
+### Products Table Additions
+
+- `specifications JSONB` — Array of `{name, value}` objects for dynamic product attributes (e.g. `[{"name":"Model","value":"Thinkpad"},{"name":"RAM","value":"32GB"}]`). Added via migration `003_specifications.sql`.
 
 ## API Endpoints
 
@@ -99,6 +105,8 @@ A full-stack marketplace with a **Go** backend (Clean Architecture + PostgreSQL)
 | POST | `/api/v1/admin/products` | Create product |
 | PUT | `/api/v1/admin/products/:id` | Update product |
 | DELETE | `/api/v1/admin/products/:id` | Delete product |
+| POST | `/api/v1/admin/upload` | Upload product images (multipart, field `files`) |
+| GET | `/uploads/*` | Static file serving for uploaded images |
 | GET | `/api/v1/admin/orders` | List all orders |
 | PUT | `/api/v1/admin/orders/:id/status` | Update order status |
 | PUT | `/api/v1/admin/reviews/:id/approve` | Approve review |
@@ -117,10 +125,20 @@ cp .env.example .env
 # Edit .env with your Stripe keys
 ```
 
-### 3. Run the server
+### 3. Run migrations
+```bash
+# Connect to the database and run:
+psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/001_initial.sql
+psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/002_audit_logs.sql
+psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/003_specifications.sql
+```
+
+### 4. Run the server
 ```bash
 go run ./cmd/server
 ```
+
+The `uploads/` directory is created automatically on server start.
 
 ## Environment Variables
 
@@ -138,7 +156,7 @@ go run ./cmd/server
 | `STRIPE_WEBHOOK_SECRET` | — | Webhook signing secret |
 | `STRIPE_SUCCESS_URL` | `http://localhost:4200/orders/success` | Post-payment redirect |
 | `STRIPE_CANCEL_URL` | `http://localhost:4200/cart` | Cancel redirect |
-| `CDN_URL` | — | Cloudflare CDN base URL |
+| `CDN_URL` | — | CDN base URL for product images (e.g. Cloudflare R2). When set, the upload handler returns `{CDN_URL}/uploads/filename` instead of the local server URL. |
 | `CORS_ORIGINS` | `http://localhost:4200` | Allowed origins |
 
 ## Deployment
@@ -161,6 +179,9 @@ docker run -p 8080:8080 marketplace-api
 
 - **Clean Architecture**: Domain entities are independent of frameworks; repositories are interfaces; use cases contain business logic; delivery layer handles HTTP concerns
 - **Transactions**: Order creation updates stock atomically; Stripe webhook confirms payment within same transaction context
-- **CDN**: Product images use Cloudflare URLs stored in the `images` array field
+- **Image Storage**: Images are uploaded via `POST /admin/upload` and stored in `./uploads/` with unique filenames. The upload handler returns absolute URLs (e.g. `http://localhost:8080/uploads/file.jpg`). For production with a CDN, set the `CDN_URL` env var to serve images from a CDN origin. The `uploads/` directory is auto-created on server start and served statically at `/uploads/`.
+- **Product Specifications**: Each product has a `specifications` JSONB field storing an array of `{name, value}` pairs (e.g. model, RAM, SSD). This provides dynamic, per-product attributes displayed in a dedicated section on the product detail page.
+- **Footer Layout**: The app shell uses a flex column layout (`min-height: 100vh`) with the router outlet wrapped in `<main class="flex-1">` to ensure the footer always sticks to the bottom regardless of page content height.
+- **SVG Icons**: The `<app-icon>` component renders icons as trusted SVG HTML via `DomSanitizer.bypassSecurityTrustHtml()`, with explicit `width`/`height`/`color` attributes on the SVG element for reliable rendering.
 - **Stripe**: Checkout sessions created with line items; webhook handled asynchronously with idempotency
 - **Security**: Passwords hashed with bcrypt; JWT with HMAC signing; admin endpoints locked via middleware

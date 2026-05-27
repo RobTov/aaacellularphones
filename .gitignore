@@ -31,3 +31,4 @@ web/.cache/
 postgres_data/
 
 PROJECT_DESCRIPTION.md
+/uploads/

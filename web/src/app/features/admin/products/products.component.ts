@@ -317,6 +317,10 @@ export class AdminProductsComponent implements OnInit {
         this.load(1);
         this.cdr.detectChanges();
       },
+      error: () => {
+        this.toast.error('Failed to save product.');
+        this.cdr.detectChanges();
+      },
     });
   }
 

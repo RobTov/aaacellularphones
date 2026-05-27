@@ -200,6 +200,12 @@ func (h *ProductHandler) Upload(c *gin.Context) {
 		return
 	}
 
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+
 	var urls []string
 	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
 
@@ -236,7 +242,7 @@ func (h *ProductHandler) Upload(c *gin.Context) {
 			return
 		}
 
-		urls = append(urls, "/uploads/"+filename)
+		urls = append(urls, baseURL+"/uploads/"+filename)
 	}
 
 	response.JSON(c, http.StatusCreated, urls)
