@@ -27,7 +27,9 @@ export class ErrorInterceptor implements HttpInterceptor {
           this.auth.logout();
           msg = 'Session expired. Please login again.';
         }
-        this.toast.error(msg);
+        if (!req.url.includes('/auth/login')) {
+          this.toast.error(msg);
+        }
         return throwError(() => err);
       }),
     );

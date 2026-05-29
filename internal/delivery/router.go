@@ -125,7 +125,7 @@ func SetupRoutes(r *gin.Engine, h *Handler, authMW *middleware.AuthMiddleware, o
 			admin.GET("/logs", h.Log.List)
 		}
 
-		// Stripe webhook (public, no auth)
-		api.POST("/webhooks/stripe", h.Payment.HandleWebhook)
+		// Stripe webhook (public, no auth) - commented out for development mock
+		// api.POST("/webhooks/stripe", h.Payment.HandleWebhook)
 	}
 }

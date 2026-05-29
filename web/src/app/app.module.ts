@@ -21,6 +21,7 @@ import { IconComponent } from './shared/components/icon/icon.component';
 import { TruncatePipe } from './shared/pipes/truncate.pipe';
 
 // Features
+import { HomeComponent } from './features/home/home.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { ProductListComponent } from './features/products/product-list/product-list.component';
@@ -38,6 +39,7 @@ import { OrderDetailComponent } from './features/orders/order-detail/order-detai
     ProductCardComponent,
     ConfirmDialogComponent,
     TruncatePipe,
+    HomeComponent,
     LoginComponent,
     RegisterComponent,
     ProductListComponent,

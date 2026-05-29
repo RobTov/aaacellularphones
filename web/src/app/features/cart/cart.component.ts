@@ -99,7 +99,7 @@ export class CartComponent {
         this.api.post<{ url: string }>('/payments/checkout', { order_id: order.id }).subscribe({
           next: res => {
             this.cart.clear();
-            window.location.href = res.url;
+            this.router.navigate(['/orders/success']);
           },
           error: () => {
             this.loading = false;

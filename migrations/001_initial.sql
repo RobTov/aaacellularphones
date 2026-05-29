@@ -160,7 +160,7 @@ CREATE INDEX idx_admin_logs_created ON admin_logs(created_at DESC);
 INSERT INTO users (email, password_hash, first_name, last_name, role)
 VALUES (
     'admin@marketplace.com',
-    '$2a$10$FF5KEsIUgvSNPDAk6fNnOOrXcU0GTfW8gZ4BzXsD1tJVLtT0tKnUi',
+    '$2a$10$qecIFMbMfViueI.DoJzhnOios0W9/jluXbbFTM.W1Cbkq2RC78lR.',
     'Admin',
     'User',
     'admin'

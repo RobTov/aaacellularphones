@@ -11,6 +11,13 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="w-full max-w-sm">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <h1 class="text-2xl font-bold text-gray-900 text-center mb-8">Sign In</h1>
+          <div *ngIf="errorMessage"
+               class="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm text-red-700">{{ errorMessage }}</p>
+          </div>
           <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
@@ -42,6 +49,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class LoginComponent {
   form: FormGroup;
   loading = false;
+  errorMessage = '';
 
   constructor(
     private fb: FormBuilder,
@@ -58,10 +66,12 @@ export class LoginComponent {
   submit(): void {
     if (this.form.invalid) return;
     this.loading = true;
+    this.errorMessage = '';
     this.auth.login(this.form.value).subscribe({
       next: () => this.router.navigate(['/']),
-      error: () => {
+      error: (err) => {
         this.loading = false;
+        this.errorMessage = err.error?.error || err.error?.message || 'Invalid email or password. Please try again.';
         this.cdr.detectChanges();
       },
     });

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
+import { HomeComponent } from './features/home/home.component';
 import { ProductListComponent } from './features/products/product-list/product-list.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
 import { LoginComponent } from './features/auth/login/login.component';
@@ -12,7 +13,7 @@ import { OrderListComponent } from './features/orders/order-list/order-list.comp
 import { OrderDetailComponent } from './features/orders/order-detail/order-detail.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/products', pathMatch: 'full' },
+  { path: '', component: HomeComponent },
   { path: 'products', component: ProductListComponent },
   { path: 'products/:slug', component: ProductDetailComponent },
   { path: 'auth/login', component: LoginComponent },
