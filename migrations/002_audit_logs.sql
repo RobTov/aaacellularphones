@@ -36,7 +36,7 @@ DECLARE
     rec_id UUID;
     uid UUID;
 BEGIN
-    uid := current_setting('app.current_user_id', true)::UUID;
+    uid := NULLIF(current_setting('app.current_user_id', true), '')::UUID;
 
     IF TG_OP = 'INSERT' THEN
         rec_id := NEW.id;

@@ -2,16 +2,16 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 
 	"github.com/aaacellularphones/backend/internal/domain"
 	"github.com/aaacellularphones/backend/pkg/hash"
 	"github.com/aaacellularphones/backend/pkg/jwt"
-	// Stripe imports - commented out for development mock
-	// "github.com/stripe/stripe-go/v74"
-	// "github.com/stripe/stripe-go/v74/checkout/session"
-	// "github.com/stripe/stripe-go/v74/webhook"
+	"github.com/stripe/stripe-go/v74"
+	"github.com/stripe/stripe-go/v74/checkout/session"
+	"github.com/stripe/stripe-go/v74/webhook"
 )
 
 // ============================================================
@@ -345,10 +345,14 @@ func (uc *OrderUseCase) Create(ctx context.Context, userID string, input CreateO
 		}
 		total := product.Price * float64(item.Quantity)
 		totalAmount += total
+		productImage := ""
+		if len(product.Images) > 0 {
+			productImage = product.Images[0]
+		}
 		items = append(items, domain.OrderItem{
 			ProductID:    product.ID,
 			ProductName:  product.Name,
-			ProductImage: product.Images[0],
+			ProductImage: productImage,
 			Quantity:     item.Quantity,
 			UnitPrice:    product.Price,
 			TotalPrice:   total,
@@ -453,35 +457,60 @@ func (uc *PaymentUseCase) CreateCheckoutSession(ctx context.Context, input Creat
 		return "", errors.New("order already processed")
 	}
 
-	log.Printf("[MOCK PAYMENT] Processing order %s for $%.2f", input.OrderID, order.TotalAmount)
+	stripe.Key = uc.stripeKey
 
-	payment, err := uc.paymentRepo.GetByOrderID(ctx, input.OrderID)
+	items, err := uc.orderRepo.GetItems(ctx, input.OrderID)
 	if err != nil {
-		payment = &domain.Payment{
-			OrderID:  input.OrderID,
-			Amount:   order.TotalAmount,
-			Currency: "usd",
-			Status:   domain.PaymentPending,
-		}
-		if err := uc.paymentRepo.Create(ctx, payment); err != nil {
-			return "", err
-		}
-	}
-
-	if err := uc.paymentRepo.UpdateStatus(ctx, payment.ID, domain.PaymentCompleted); err != nil {
-		return "", err
-	}
-	if err := uc.orderRepo.UpdateStatus(ctx, input.OrderID, domain.OrderConfirmed); err != nil {
 		return "", err
 	}
 
-	log.Printf("[MOCK PAYMENT] Order %s completed successfully", input.OrderID)
+	var lineItems []*stripe.CheckoutSessionLineItemParams
+	for _, item := range items {
+		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("usd"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String(item.ProductName),
+				},
+				UnitAmount: stripe.Int64(int64(item.UnitPrice * 100)),
+			},
+			Quantity: stripe.Int64(int64(item.Quantity)),
+		})
+	}
 
-	return uc.successURL, nil
+	params := &stripe.CheckoutSessionParams{
+		Params: stripe.Params{
+			Metadata: map[string]string{
+				"order_id": input.OrderID,
+			},
+		},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String(uc.successURL),
+		CancelURL:  stripe.String(uc.cancelURL),
+		LineItems:  lineItems,
+	}
+
+	s, err := session.New(params)
+	if err != nil {
+		return "", err
+	}
+
+	payment := &domain.Payment{
+		OrderID:           input.OrderID,
+		StripeSessionID:   s.ID,
+		Amount:            order.TotalAmount,
+		Currency:          "usd",
+		Status:            domain.PaymentPending,
+	}
+	if err := uc.paymentRepo.Create(ctx, payment); err != nil {
+		return "", err
+	}
+
+	log.Printf("[STRIPE] Checkout session %s created for order %s", s.ID, input.OrderID)
+
+	return s.URL, nil
 }
 
-// Stripe webhook handler - commented out for development mock
-/*
 func (uc *PaymentUseCase) HandleWebhook(ctx context.Context, payload []byte, sigHeader string) error {
 	event, err := webhook.ConstructEvent(payload, sigHeader, uc.stripeWebhookSecret)
 	if err != nil {
@@ -500,8 +529,8 @@ func (uc *PaymentUseCase) HandleWebhook(ctx context.Context, payload []byte, sig
 	return nil
 }
 
-func (uc *PaymentUseCase) handleSessionCompleted(ctx context.Context, session *stripe.CheckoutSession) error {
-	orderID, ok := session.Metadata["order_id"]
+func (uc *PaymentUseCase) handleSessionCompleted(ctx context.Context, s *stripe.CheckoutSession) error {
+	orderID, ok := s.Metadata["order_id"]
 	if !ok {
 		return errors.New("no order_id in session metadata")
 	}
@@ -515,7 +544,7 @@ func (uc *PaymentUseCase) handleSessionCompleted(ctx context.Context, session *s
 		return nil
 	}
 
-	if err := uc.paymentRepo.UpdateSession(ctx, payment.ID, session.ID, session.PaymentIntent.ID); err != nil {
+	if err := uc.paymentRepo.UpdateSession(ctx, payment.ID, s.ID, s.PaymentIntent.ID); err != nil {
 		return err
 	}
 	if err := uc.paymentRepo.UpdateStatus(ctx, payment.ID, domain.PaymentCompleted); err != nil {
@@ -527,7 +556,6 @@ func (uc *PaymentUseCase) handleSessionCompleted(ctx context.Context, session *s
 
 	return nil
 }
-*/
 
 // ============================================================
 // LOG USE CASE (immutable audit logs, read-only for admins)

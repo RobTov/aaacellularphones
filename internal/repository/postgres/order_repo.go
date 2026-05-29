@@ -116,7 +116,7 @@ func (r *orderRepo) CreateWithItems(ctx context.Context, o *domain.Order, items 
 	}
 	defer tx.Rollback()
 
-	if err := setAuditUserID(ctx, r.db); err != nil {
+	if err := setAuditUserID(ctx, tx); err != nil {
 		return err
 	}
 
@@ -405,11 +405,11 @@ func (r *logRepo) List(ctx context.Context, page, limit int) ([]domain.Log, int,
 }
 
 // setAuditUserID sets the app.current_user_id config for trigger-based audit logging.
-func setAuditUserID(ctx context.Context, db *sqlx.DB) error {
+func setAuditUserID(ctx context.Context, exec sqlx.ExtContext) error {
 	userID := middleware.AuditUserIDFromContext(ctx)
 	if userID == "" {
 		return nil
 	}
-	_, err := db.ExecContext(ctx, "SELECT set_config('app.current_user_id', $1, true)", userID)
+	_, err := exec.ExecContext(ctx, "SELECT set_config('app.current_user_id', $1, true)", userID)
 	return err
 }

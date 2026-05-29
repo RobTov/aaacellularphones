@@ -125,10 +125,8 @@ func (h *PaymentHandler) CreateCheckoutSession(c *gin.Context) {
 	response.JSON(c, http.StatusOK, gin.H{"url": url})
 }
 
-// Stripe webhook handler - commented out for development mock
-/*
 func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
-	payload, err := io.ReadAll(c.Request.Body)
+	payload, err := c.GetRawData()
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "failed to read body")
 		return
@@ -142,7 +140,6 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
-*/
 
 // ---------- Log Handler ----------
 

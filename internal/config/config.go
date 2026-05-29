@@ -1,8 +1,11 @@
 package config
 
 import (
+	"bufio"
+	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -27,6 +30,37 @@ type Config struct {
 	CDNURL string
 
 	CORSOrigins string
+}
+
+func init() {
+	loadEnvFile(".env")
+}
+
+func loadEnvFile(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		if os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("error reading .env file: %v", err)
+	}
 }
 
 func Load() *Config {
