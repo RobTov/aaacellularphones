@@ -130,6 +130,9 @@ func (uc *UserUseCase) UpdateProfile(ctx context.Context, user *domain.User) err
 }
 
 func (uc *UserUseCase) ListUsers(ctx context.Context, page, limit int) ([]domain.User, int, error) {
+	if page < 1 {
+		page = 1
+	}
 	offset := (page - 1) * limit
 	return uc.userRepo.List(ctx, offset, limit)
 }

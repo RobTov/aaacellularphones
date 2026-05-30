@@ -136,7 +136,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	p.ID = c.Param("productId")
+	p.ID = c.Param("id")
 	if err := h.uc.Update(c.Request.Context(), &p); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
@@ -181,7 +181,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 }
 
 func (h *ProductHandler) Delete(c *gin.Context) {
-	if err := h.uc.Delete(c.Request.Context(), c.Param("productId")); err != nil {
+	if err := h.uc.Delete(c.Request.Context(), c.Param("id")); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}

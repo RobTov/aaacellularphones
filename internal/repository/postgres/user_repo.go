@@ -18,8 +18,8 @@ func NewUserRepository(db *sqlx.DB) domain.UserRepository {
 }
 
 func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
-	query := `INSERT INTO users (email, password_hash, first_name, last_name, role)
-	          VALUES (:email, :password_hash, :first_name, :last_name, :role)
+	query := `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
+	          VALUES (:email, :password_hash, :first_name, :last_name, :role, :is_active)
 	          RETURNING id, created_at, updated_at`
 	rows, err := r.db.NamedQueryContext(ctx, query, u)
 	if err != nil {
@@ -92,8 +92,8 @@ func NewCategoryRepository(db *sqlx.DB) domain.CategoryRepository {
 }
 
 func (r *categoryRepo) Create(ctx context.Context, c *domain.Category) error {
-	query := `INSERT INTO categories (name, slug, description, image_url, parent_id, sort_order)
-	          VALUES (:name, :slug, :description, :image_url, :parent_id, :sort_order)
+	query := `INSERT INTO categories (name, slug, description, image_url, parent_id, sort_order, is_active)
+	          VALUES (:name, :slug, :description, :image_url, :parent_id, :sort_order, :is_active)
 	          RETURNING id, created_at, updated_at`
 	rows, err := r.db.NamedQueryContext(ctx, query, c)
 	if err != nil {
@@ -202,6 +202,7 @@ func (r *productRepo) Update(ctx context.Context, p *domain.Product) error {
 	          name = :name, slug = :slug, description = :description,
 	          price = :price, compare_price = :compare_price, stock = :stock,
 	          images = :images, category_id = :category_id, is_active = :is_active,
+	          status = :status,
 	          specifications = :specifications,
 	          updated_at = NOW()
 	          WHERE id = :id`

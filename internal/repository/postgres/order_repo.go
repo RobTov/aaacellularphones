@@ -79,9 +79,19 @@ func (r *orderRepo) List(ctx context.Context, page, limit int) ([]domain.Order, 
 }
 
 func (r *orderRepo) UpdateStatus(ctx context.Context, id string, status domain.OrderStatus) error {
-	_, err := r.db.ExecContext(ctx,
+	res, err := r.db.ExecContext(ctx,
 		"UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2", status, id)
-	return err
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("order not found")
+	}
+	return nil
 }
 
 func (r *orderRepo) AddItem(ctx context.Context, item *domain.OrderItem) error {

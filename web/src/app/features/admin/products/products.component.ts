@@ -201,6 +201,8 @@ export class AdminProductsComponent implements OnInit {
       compare_price: [null],
       stock: [0, [Validators.required, Validators.min(0)]],
       category_id: ['', Validators.required],
+      is_active: [true],
+      status: ['active'],
       specifications: this.fb.array([]),
     });
   }
@@ -260,6 +262,8 @@ export class AdminProductsComponent implements OnInit {
         compare_price: p.compare_price,
         stock: p.stock,
         category_id: p.category_id,
+        is_active: p.is_active,
+        status: p.status,
       });
       (p.specifications || []).forEach(spec => this.addSpec(spec));
     } else {
