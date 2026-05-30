@@ -4,6 +4,26 @@
 
 E-commerce marketplace for a physical cell phone store in Arlington, TX. Backend in Go (Gin + sqlx + PostgreSQL), frontend in Angular (standalone components, Vite). Includes admin panel for managing products, categories, orders, users, reviews, and logs.
 
+## Key Features
+
+- **User authentication** — Register and login with bcrypt password hashing, JWT token-based sessions, role-based access (customer / admin)
+- **Product catalog** — Browse products with filters: category, price range, text search; sortable by price, name, date; paginated results
+- **Product detail** — Full product view with images, specifications, pricing (regular vs. compare-at), stock status
+- **Shopping cart** — Add/remove items, persists per authenticated user
+- **Checkout & payments** — Stripe Checkout integration, webhook for payment confirmation
+- **Order management** — Customers view order history and detail; admins update order status
+- **Product reviews & ratings** — Customers leave reviews; admins approve/moderate and delete
+- **Admin dashboard** — Overview analytics panel
+- **Admin product management** — Full CRUD, image upload, product activation toggle
+- **Admin category management** — Full CRUD with slug-based routing
+- **Admin user management** — List, search, and delete users
+- **Admin order management** — List all orders, update order status
+- **Admin payment management** — View payment records
+- **Admin review moderation** — Approve or remove reviews
+- **Admin audit logs** — Full activity log with entity/action/user tracking via DB triggers
+- **Image upload** — Admin product image uploads served from `/uploads`
+- **Responsive UI** — Angular frontend with Tailwind CSS, mobile-friendly
+
 ## Architecture
 
 ```
@@ -66,10 +86,15 @@ STRIPE_CANCEL_URL=http://localhost:4200/cart
 - **Product image URLs not resolving to full URL**: Category/product endpoints returned relative filenames (e.g. `seed_18.jpg`) instead of full URLs. Added `resolveProductImages()` and `requestBaseURL()` helpers in `internal/delivery/category_handler.go:330`.
 - **CORS errors (browser blocking API requests)**: The CORS middleware validated `Origin` against a fixed `CORS_ORIGINS` list. If the browser sent Origin not in the list (e.g. `http://127.0.0.1:4200` instead of `http://localhost:4200`), the middleware fell back to `allowed[0]`, causing a mismatch. Fixed by echoing back the request's Origin unconditionally. Also added `Vary: Origin` header and reduced `Max-Age` to 3600s. File: `internal/middleware/cors.go`
 - **MaxListenersExceededWarning in Angular dev server**: The `start` script used `NODE_OPTIONS="--require=..." ng serve`, but `--require` is not allowed in `NODE_OPTIONS` in Node.js v22, so the preload script was silently ignored. Fixed by using `node --require=./.increase-listeners.js ./node_modules/@angular/cli/bin/ng.js serve` directly. File: `web/package.json`
+- **`PUT/DELETE /admin/products/:id` 500 error**: Route uses `:id` but handlers read `c.Param("productId")`, so `p.ID` was always empty — PostgreSQL rejects empty-string UUID. Fixed: changed to `c.Param("id")` in both `Update` and `Delete`. File: `internal/delivery/category_handler.go:139,184`
+- **Updating a product silently deactivates it**: The admin product form didn't include `is_active` or `status`, so `IsActive` defaulted to `false` and the product disappeared from the public list. Fixed: added `is_active: true` and `status: 'active'` controls to the form, patched existing values on edit. Also added `status = :status` to the SQL UPDATE query (was missing). Files: `web/src/app/features/admin/products/products.component.ts`, `internal/repository/postgres/user_repo.go:201`
+- **`is_active` missing from INSERT queries (categories + users)**: The CREATE queries for categories and users omitted `is_active` from the column list, so even though the Go code set it, the DB default was always used. Fixed: added `is_active` to both INSERT statements. Files: `internal/repository/postgres/user_repo.go:21,95`
+- **`UpdateStatus` returns success on non-existent order**: `RowsAffected` was discarded, so updating status on a bogus order ID returned success. Fixed: check `RowsAffected() == 0` and return error. File: `internal/repository/postgres/order_repo.go:81`
+- **`ListUsers` crashes on page=0 or negative page**: No guard against `page < 1`, causing a negative SQL `OFFSET`. Fixed: added `if page < 1 { page = 1 }` guard. File: `internal/usecase/usecase.go:132`
 
-### Known Issue
+### Known Issues
 
-`PUT /admin/products/:id` fails on partial payloads because `NamedExecContext` binds zero-value `CategoryID=""` to a `UUID NOT NULL` column. Fix would require reading existing product first and merging.
+- **Partial payloads on product/category update**: `NamedExecContext` binds zero-values (e.g. `CategoryID=""`) to `UUID NOT NULL` columns. The admin panel always sends all fields, but direct API calls with partial JSON will silently zero omitted fields.
 
 ## Database Seeding
 
