@@ -116,6 +116,7 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 		response.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
+	resolveProductImages(p, requestBaseURL(c))
 	response.JSON(c, http.StatusOK, p)
 }
 
@@ -125,6 +126,7 @@ func (h *ProductHandler) GetBySlug(c *gin.Context) {
 		response.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
+	resolveProductImages(p, requestBaseURL(c))
 	response.JSON(c, http.StatusOK, p)
 }
 
@@ -170,6 +172,11 @@ func (h *ProductHandler) List(c *gin.Context) {
 		return
 	}
 
+	base := requestBaseURL(c)
+	for i := range products {
+		resolveProductImages(&products[i], base)
+	}
+
 	response.Paginated(c, products, filter.Page, filter.Limit, total)
 }
 
@@ -200,11 +207,7 @@ func (h *ProductHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+	baseURL := requestBaseURL(c)
 
 	var urls []string
 	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
@@ -322,6 +325,23 @@ func parseQueryInt(s string, defaultVal int) int {
 		return defaultVal
 	}
 	return v
+}
+
+func requestBaseURL(c *gin.Context) string {
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	return fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+}
+
+func resolveProductImages(p *domain.Product, baseURL string) {
+	for i, img := range p.Images {
+		if strings.Contains(img, "://") {
+			continue
+		}
+		p.Images[i] = baseURL + "/uploads/" + img
+	}
 }
 
 func parseQueryFloat(s string, defaultVal float64) float64 {

@@ -1,187 +1,154 @@
-# AAACellularPhones Marketplace
+# AAACellularPhones
 
-A full-stack marketplace with a **Go** backend (Clean Architecture + PostgreSQL) and an **Angular 19** frontend.
+## Overview
 
-## Tech Stack
+E-commerce marketplace for a physical cell phone store in Arlington, TX. Backend in Go (Gin + sqlx + PostgreSQL), frontend in Angular (standalone components, Vite). Includes admin panel for managing products, categories, orders, users, reviews, and logs.
 
-- **Language:** Go 1.23
-- **Framework:** Gin (HTTP router)
-- **Database:** PostgreSQL 16 (via `lib/pq` + `sqlx`)
-- **Auth:** JWT (golang-jwt/v5)
-- **Payments:** Stripe (checkout sessions + webhooks)
-- **ORM:** sqlx (lightweight SQL toolkit)
-- **Deploy:** Docker + Render/Railway
-
-## Project Structure (Clean Architecture)
+## Architecture
 
 ```
-├── cmd/server/main.go          # Entry point
-├── internal/
-│   ├── config/                 # Environment config
-│   ├── domain/                 # Entities + Repository interfaces
-│   │   ├── user.go / category.go / product.go
-│   │   ├── order.go / order_item.go / payment.go
-│   │   ├── review.go / admin_log.go
-│   │   └── repository.go       # All repository interfaces
-│   ├── repository/postgres/    # PostgreSQL implementations
-│   │   ├── user_repo.go        # Users, Categories, Products repos
-│   │   └── order_repo.go       # Orders, Payments, Reviews, AdminLogs repos
-│   ├── usecase/usecase.go      # Business logic (all use cases)
-│   ├── delivery/               # HTTP handlers + router
-│   │   ├── auth_handler.go     # Auth + User handlers
-│   │   ├── category_handler.go # Category, Product, Review handlers + image upload
-│   │   ├── order_handler.go    # Order + Payment handlers
-│   │   └── router.go           # Route definitions (includes /uploads/ static serve)
-│   └── middleware/             # Auth (JWT) + CORS middleware
-├── pkg/                        # Shared utilities
-│   ├── jwt/                    # Token generation/validation
-│   ├── hash/                   # bcrypt password hashing
-│   └── response/               # Standard API response helpers
-├── migrations/001_initial.sql  # DB schema + seed data
-├── migrations/003_specifications.sql  # Added: specifications JSONB column
-├── uploads/                    # Local image storage (gitignored)
-├── docker-compose.yml          # PostgreSQL on port 5433
-├── Dockerfile                  # Multi-stage build
-├── .env.example                # Environment variables template
+┌─────────────┐     ┌──────────────┐     ┌────────────┐
+│  Angular     │────▶│  Go Backend  │────▶│ PostgreSQL │
+│  :4200       │     │  :8080       │     │  :5433     │
+└─────────────┘     └──────┬───────┘     └────────────┘
+                           │
+                    ┌──────▼───────┐
+                    │  Stripe      │
+                    │  Checkout    │
+                    └──────────────┘
 ```
 
-## Database (PostgreSQL)
+## Stack
 
-- **Port:** 5433 (avoids conflict with local pg)
-- **Tables:** users, categories, products, orders, order_items, payments, reviews, admin_logs
-- **Seed admin:** admin@marketplace.com / Admin123!
+- **Backend**: Go 1.23, Gin, sqlx, lib/pq, stripe-go v74
+- **Frontend**: Angular 19, Vite, Tailwind CSS (via CDN), ngx-toastr
+- **Database**: PostgreSQL 16 (Docker)
+- **Payments**: Stripe Checkout Sessions + Webhooks
 
-### ER Relations
+## Stripe Payment Flow (Development)
 
-| Relation | Type |
-|---|---|
-| Users → Orders | One-to-Many |
-| Orders → OrderItems | One-to-Many |
-| Products → OrderItems | One-to-Many |
-| Categories → Products | One-to-Many |
-| Orders → Payments | One-to-One |
-| Products → Reviews | One-to-Many |
-| Users (Admins) → AdminLogs | One-to-Many |
+### Implementation
 
-### Products Table Additions
+1. **Checkout Session Creation** (`POST /api/v1/payments/checkout`)
+   - Authenticated endpoint (requires JWT)
+   - Accepts `{ "order_id": "uuid" }`
+   - Looks up the order, validates ownership, creates Stripe `CheckoutSession` with line items
+   - Returns `{ "url": "https://checkout.stripe.com/..." }`
+   - Uses `STRIPE_SECRET_KEY` from `.env`
+   - File: `internal/usecase/usecase.go` — `CreateCheckoutSession()`, `lineItemsFromOrder()`
 
-- `specifications JSONB` — Array of `{name, value}` objects for dynamic product attributes (e.g. `[{"name":"Model","value":"Thinkpad"},{"name":"RAM","value":"32GB"}]`). Added via migration `003_specifications.sql`.
+2. **Frontend Redirect**
+   - Cart component calls checkout endpoint, then does `window.location.href = res.url`
+   - File: `web/src/app/features/cart/cart.component.ts`
 
-## API Endpoints
+3. **Webhook Handling** (`POST /api/v1/webhooks/stripe`)
+   - Public endpoint (no JWT), verified via Stripe signature
+   - Event type: `checkout.session.completed`
+   - On completion: updates order status to `paid`, records payment in `payments` table
+   - Uses `STRIPE_WEBHOOK_SECRET` from `.env`
+   - Files: `internal/delivery/order_handler.go` — `HandleWebhook()`, `internal/delivery/router.go` — route registration
 
-### Public
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/v1/auth/register` | Register user |
-| POST | `/api/v1/auth/login` | Login |
-| GET | `/api/v1/categories` | List categories |
-| GET | `/api/v1/categories/:id` | Get category by ID |
-| GET | `/api/v1/categories/slug/:slug` | Get category by slug |
-| GET | `/api/v1/products` | List products (with filters) |
-| GET | `/api/v1/products/:id` | Get product |
-| GET | `/api/v1/products/slug/:slug` | Get product by slug |
-| GET | `/api/v1/products/:productId/reviews` | Get product reviews |
-| POST | `/api/v1/webhooks/stripe` | Stripe webhook |
+### Configuration
 
-### Authenticated (JWT required)
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/me` | Get profile |
-| PUT | `/api/v1/me` | Update profile |
-| POST | `/api/v1/orders` | Create order |
-| GET | `/api/v1/orders` | My orders |
-| GET | `/api/v1/orders/:id` | Get order |
-| POST | `/api/v1/products/:productId/reviews` | Create review |
-| POST | `/api/v1/payments/checkout` | Create Stripe checkout |
+Keys loaded from `.env` via auto-loader in `config.init()`:
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_SUCCESS_URL=http://localhost:4200/orders/success
+STRIPE_CANCEL_URL=http://localhost:4200/cart
+```
 
-### Admin (JWT + admin role required)
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/admin/users` | List users |
-| DELETE | `/api/v1/admin/users/:id` | Delete user |
-| POST | `/api/v1/admin/categories` | Create category |
-| PUT | `/api/v1/admin/categories/:id` | Update category |
-| DELETE | `/api/v1/admin/categories/:id` | Delete category |
-| POST | `/api/v1/admin/products` | Create product |
-| PUT | `/api/v1/admin/products/:id` | Update product |
-| DELETE | `/api/v1/admin/products/:id` | Delete product |
-| POST | `/api/v1/admin/upload` | Upload product images (multipart, field `files`) |
-| GET | `/uploads/*` | Static file serving for uploaded images |
-| GET | `/api/v1/admin/orders` | List all orders |
-| PUT | `/api/v1/admin/orders/:id/status` | Update order status |
-| PUT | `/api/v1/admin/reviews/:id/approve` | Approve review |
-| DELETE | `/api/v1/admin/reviews/:id` | Delete review |
+### Bug Fixes Applied
 
-## Getting Started
+- **Audit triggers crashing on table mutations**: The trigger function `log_audit_trigger()` reads `app.current_user_id` via `current_setting`, which returns empty string `''` when unset. Casting to `UUID` fails. Fixed with `NULLIF(current_setting('app.current_user_id', true), '')::UUID`. File: `migrations/002_audit_logs.sql`
+- **`setAuditUserID` using wrong DB handle**: Was calling `r.db.ExecContext()` (pool) instead of `tx.ExecContext()` (transaction). Fixed by changing parameter type to `sqlx.ExtContext`. File: `internal/repository/postgres/order_repo.go`
+- **Order creation panic on empty images**: `product.Images[0]` panics if `Images` is empty. Added length check. File: `internal/usecase/usecase.go` — `createOrder()`
+- **Product image URLs not resolving to full URL**: Category/product endpoints returned relative filenames (e.g. `seed_18.jpg`) instead of full URLs. Added `resolveProductImages()` and `requestBaseURL()` helpers in `internal/delivery/category_handler.go:330`.
+- **CORS errors (browser blocking API requests)**: The CORS middleware validated `Origin` against a fixed `CORS_ORIGINS` list. If the browser sent Origin not in the list (e.g. `http://127.0.0.1:4200` instead of `http://localhost:4200`), the middleware fell back to `allowed[0]`, causing a mismatch. Fixed by echoing back the request's Origin unconditionally. Also added `Vary: Origin` header and reduced `Max-Age` to 3600s. File: `internal/middleware/cors.go`
+- **MaxListenersExceededWarning in Angular dev server**: The `start` script used `NODE_OPTIONS="--require=..." ng serve`, but `--require` is not allowed in `NODE_OPTIONS` in Node.js v22, so the preload script was silently ignored. Fixed by using `node --require=./.increase-listeners.js ./node_modules/@angular/cli/bin/ng.js serve` directly. File: `web/package.json`
 
-### 1. Start PostgreSQL
+### Known Issue
+
+`PUT /admin/products/:id` fails on partial payloads because `NamedExecContext` binds zero-value `CategoryID=""` to a `UUID NOT NULL` column. Fix would require reading existing product first and merging.
+
+## Database Seeding
+
+### Seed Command
+
 ```bash
+make db-seed   # runs go run ./cmd/seed
+```
+
+### What It Seeds
+
+`cmd/seed/main.go` clears existing data and inserts:
+
+- **8 Categories**: Phones, Laptops, Gaming Consoles, Tablets, Audio, Smart Home, Cameras, Accessories
+- **34 Products** across all categories with realistic data:
+  - 8 Phones (iPhone 16 Pro Max, Galaxy S25 Ultra, Pixel 9 Pro, etc.)
+  - 6 Laptops (MacBook Pro M4, Dell XPS 15, ThinkPad X1 Carbon, etc.)
+  - 5 Gaming Consoles (PS5 Pro, Xbox Series X, Switch 2, Steam Deck OLED, ROG Ally X)
+  - 4 Tablets (iPad Pro M4, Galaxy Tab S10 Ultra, Surface Pro 11, iPad Air M3)
+  - 4 Audio (AirPods Pro 3, Sony WH-1000XM6, Bose QC Ultra, Galaxy Buds 3 Pro)
+  - 3 Smart Home (Apple Watch Ultra 3, Galaxy Watch 7 Ultra, Ring Doorbell Pro 3)
+  - 2 Cameras (Sony A7 V, GoPro Hero 13 Black)
+  - 2 Accessories (Anker PowerCore 26800mAh, Belkin 3-in-1 MagSafe Charger)
+
+Each product includes:
+- Real-world prices, compare prices, stock counts
+- 2-3 placeholder images (`seed_*.jpg` in `uploads/`)
+- Hardware specifications as JSONB (chip, RAM, storage, display, camera, battery, etc.)
+
+### Image Downloads
+
+23 placeholder images from picsum.photos (`uploads/seed_1.jpg` through `uploads/seed_23.jpg`). Reused round-robin across products.
+
+## Quick Start
+
+### Prerequisites
+
+- Docker + Docker Compose
+- Go 1.23+
+- Node.js 22+
+- Stripe test keys in `.env`
+
+### Running
+
+```bash
+# Terminal 1 — Database
 docker-compose up -d
+
+# Terminal 2 — Backend (Go)
+make backend
+
+# Terminal 3 — Frontend (Angular)
+make frontend
+
+# Seed database
+make db-seed
 ```
 
-### 2. Configure environment
-```bash
-cp .env.example .env
-# Edit .env with your Stripe keys
+Then open `http://localhost:4200`.
+
+### Environment Variables (`.env`)
+
+```
+PORT=8080
+GIN_MODE=release
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=marketplace_user
+DB_PASSWORD=marketplace_pass
+DB_NAME=marketplace
+DB_SSLMODE=disable
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRATION_HOURS=72
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_SUCCESS_URL=http://localhost:4200/orders/success
+STRIPE_CANCEL_URL=http://localhost:4200/cart
+CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
 
-### 3. Run migrations
-```bash
-# Connect to the database and run:
-psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/001_initial.sql
-psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/002_audit_logs.sql
-psql -h localhost -p 5433 -U marketplace_user -d marketplace -f migrations/003_specifications.sql
-```
 
-### 4. Run the server
-```bash
-go run ./cmd/server
-```
-
-The `uploads/` directory is created automatically on server start.
-
-## Environment Variables
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | Server port |
-| `DB_HOST` | `localhost` | Database host |
-| `DB_PORT` | `5433` | Database port |
-| `DB_USER` | `marketplace_user` | Database user |
-| `DB_PASSWORD` | `marketplace_pass` | Database password |
-| `DB_NAME` | `marketplace` | Database name |
-| `JWT_SECRET` | — | JWT signing secret |
-| `JWT_EXPIRATION_HOURS` | `72` | Token lifetime |
-| `STRIPE_SECRET_KEY` | — | Stripe API key |
-| `STRIPE_WEBHOOK_SECRET` | — | Webhook signing secret |
-| `STRIPE_SUCCESS_URL` | `http://localhost:4200/orders/success` | Post-payment redirect |
-| `STRIPE_CANCEL_URL` | `http://localhost:4200/cart` | Cancel redirect |
-| `CDN_URL` | — | CDN base URL for product images (e.g. Cloudflare R2). When set, the upload handler returns `{CDN_URL}/uploads/filename` instead of the local server URL. |
-| `CORS_ORIGINS` | `http://localhost:4200` | Allowed origins |
-
-## Deployment
-
-### Render / Railway
-1. Push to GitHub
-2. Create a new Web Service from the repo
-3. Set the build command: `go build -o server ./cmd/server`
-4. Set the start command: `./server`
-5. Add environment variables from `.env.example`
-6. Attach a PostgreSQL database (Render provides managed PostgreSQL)
-
-### Docker
-```bash
-docker build -t marketplace-api .
-docker run -p 8080:8080 marketplace-api
-```
-
-## Key Design Decisions
-
-- **Clean Architecture**: Domain entities are independent of frameworks; repositories are interfaces; use cases contain business logic; delivery layer handles HTTP concerns
-- **Transactions**: Order creation updates stock atomically; Stripe webhook confirms payment within same transaction context
-- **Image Storage**: Images are uploaded via `POST /admin/upload` and stored in `./uploads/` with unique filenames. The upload handler returns absolute URLs (e.g. `http://localhost:8080/uploads/file.jpg`). For production with a CDN, set the `CDN_URL` env var to serve images from a CDN origin. The `uploads/` directory is auto-created on server start and served statically at `/uploads/`.
-- **Product Specifications**: Each product has a `specifications` JSONB field storing an array of `{name, value}` pairs (e.g. model, RAM, SSD). This provides dynamic, per-product attributes displayed in a dedicated section on the product detail page.
-- **Footer Layout**: The app shell uses a flex column layout (`min-height: 100vh`) with the router outlet wrapped in `<main class="flex-1">` to ensure the footer always sticks to the bottom regardless of page content height.
-- **SVG Icons**: The `<app-icon>` component renders icons as trusted SVG HTML via `DomSanitizer.bypassSecurityTrustHtml()`, with explicit `width`/`height`/`color` attributes on the SVG element for reliable rendering.
-- **Stripe**: Checkout sessions created with line items; webhook handled asynchronously with idempotency
-- **Security**: Passwords hashed with bcrypt; JWT with HMAC signing; admin endpoints locked via middleware
+STRIPE_TEST_CARD: 4242 4242 4242 4242 (any CVV/future date)

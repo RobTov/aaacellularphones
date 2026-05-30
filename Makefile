@@ -43,6 +43,9 @@ db-reset:
 db-logs:
 	docker-compose logs -f postgres
 
+db-seed:
+	go run ./cmd/seed
+
 # ─── Development (backend + frontend concurrently) ────────────────────────────
 dev:
 	@echo "Start backend and frontend in separate terminals:"
